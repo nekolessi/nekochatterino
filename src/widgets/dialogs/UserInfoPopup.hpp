@@ -30,6 +30,7 @@ class Split;
 class LabelButton;
 class PixmapButton;
 class LiveIndicator;
+struct HelixUser;
 
 class UserInfoPopup final : public DraggablePopup
 {

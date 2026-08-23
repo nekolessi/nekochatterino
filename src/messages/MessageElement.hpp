@@ -199,6 +199,8 @@ public:
 
     virtual QJsonObject toJson() const;
 
+    virtual std::unique_ptr<MessageElement> clone() const = 0;
+
     /// The type name for this message element. Used for Lua plugins.
     ///
     /// This must be unique per element. It should return the static `TYPE`
@@ -298,11 +300,6 @@ public:
 
     void appendText(QStringView text);
     void appendText(const QString &text);
-
-    QStringList words() const
-    {
-        return this->words_;
-    }
 
 protected:
     QStringList words_;
