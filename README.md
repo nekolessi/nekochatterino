@@ -1,86 +1,84 @@
-![chatterinoLogo](./resources/icon.ico)
-<u>**Chatterino Homies**</u>
+# NekoChatterino
 
-Chatterino Homies is a fork of Chatterino. This fork mainly contains features that aren't accepted into Chatterino and Chatterino 7.
+![NekoChatterino icon](./resources/icon.ico)
 
-### Screenshots
+NekoChatterino is a personal, Windows-focused fork of
+[Chatterino Homies](https://github.com/itzAlex/chatterino7), updated with the
+changes from [Chatterino 2.5.5](https://github.com/Chatterino/chatterino2/releases/tag/2.5.5).
 
-![Example of Global Emotes](./resources/readme/global_emotes.png)
-![Example of Personal Badges](./resources/readme/badges.png)
-
-### Downloads
-
-Current releases are available at [https://chatterinohomies.com](https://chatterinohomies.com).
-
-### Issues
-
-If you have issues such as crashes or weird behaviour regarding this fork, report them [in the issue-section](https://github.com/itzAlex/chatterino7/issues). If you have issues with other features, please report them [in the upstream issue-section](https://github.com/Chatterino/chatterino2/issues).
-
-### Discord
-
-If you don't have a GitHub account and want to report issues or want to join the community you can join the official Homies Discord using the link here: <https://discord.gg/ZPxUUzDjbM>.
-
-### AVIF Support
-
-When building Chatterino Homies, you might not have access to a static build of `libavif`. In that case, you can define `CHATTERINO_NO_AVIF_PLUGIN` in CMake. If you have `qavif.so` from [kimageformats](https://invent.kde.org/frameworks/kimageformats) installed on your system, Chatterino will pick it up and use AVIF images.
-
-## Original Chatterino 2 Readme
-
-Chatterino 2 is a chat client for [Twitch.tv](https://twitch.tv).
-The Chatterino 2 wiki can be found [here](https://wiki.chatterino.com).
-Contribution guidelines can be found [here](https://wiki.chatterino.com/Contributing%20for%20Developers).
+It keeps the extra Homies features while adding a polished portable build and
+desktop-friendly system tray behavior.
 
 ## Download
 
-Current releases are available at [https://chatterino.com](https://chatterino.com).
-Windows users can also install Chatterino [from Chocolatey](https://chocolatey.org/packages/chatterino).
+Download the latest Windows portable build:
 
-## Nightly build
+**[NekoChatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/chatterino7/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
 
-You can download the latest Chatterino 2 build over [here](https://github.com/Chatterino/chatterino2/releases/tag/nightly-build)
+[View release notes and file checksum](https://github.com/nekolessi/chatterino7/releases/tag/v7.5.5-neko.1)
 
-You might also need to install the [VC++ Redistributables](https://aka.ms/vs/17/release/vc_redist.x64.exe) from Microsoft if you do not have it installed already.  
-If you still receive an error about `MSVCR120.dll missing`, then you should install the [VC++ 2013 Restributable](https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe).
+1. Download and extract the ZIP file.
+2. Open the extracted `Chatterino2` folder.
+3. Run `chatterino.exe`.
 
-## Building
+> [!NOTE]
+> NekoChatterino is currently unsigned. Windows Smart App Control or an
+> organization policy may block unsigned applications. Only download builds
+> from this repository.
 
-To get source code with required submodules run:
+## Highlights
+
+- Updated from Chatterino 2.5.2 to Chatterino 2.5.5.
+- Includes the Chatterino Homies 7.5.2H1 feature set.
+- Custom NekoChatterino branding and version information.
+- Closing the main window minimizes it to the system tray.
+- Click the tray icon to restore the window, or right-click it to exit.
+- Correctly restores a maximized window.
+- Portable-only release that keeps settings beside the application.
+- Unsupported automatic update checks are disabled, avoiding false update
+  alerts.
+- Includes the Homies integrations and enhancements for services such as 7TV,
+  BetterTTV, and FrankerFaceZ.
+
+## Screenshots
+
+![Example of global emotes](./resources/readme/global_emotes.png)
+![Example of personal badges](./resources/readme/badges.png)
+
+## Using the system tray
+
+The **X** button hides NekoChatterino in the notification area instead of
+ending it. Click the NekoChatterino tray icon to bring the app back. To close it
+completely, right-click the tray icon and choose **Exit**.
+
+## Issues and feedback
+
+Report NekoChatterino problems in this repository's
+[issue tracker](https://github.com/nekolessi/chatterino7/issues).
+
+For an issue that also occurs in official Chatterino, use the
+[upstream issue tracker](https://github.com/Chatterino/chatterino2/issues).
+
+## Source and building
+
+The current NekoChatterino work is on the
+[`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/chatterino7/tree/upgrade/chatterino-2.5.5).
 
 ```shell
-git clone --recurse-submodules https://github.com/Chatterino/chatterino2.git
+git clone --recurse-submodules --branch upgrade/chatterino-2.5.5 https://github.com/nekolessi/chatterino7.git
 ```
 
-or
+See [Building on Windows](./BUILDING_ON_WINDOWS.md) for the upstream build
+instructions.
 
-```shell
-git clone https://github.com/Chatterino/chatterino2.git
-cd chatterino2
-git submodule update --init --recursive
-```
+## Credits and license
 
-- [Building on Windows](../master/BUILDING_ON_WINDOWS.md)
-- [Building on Windows with vcpkg](../master/BUILDING_ON_WINDOWS_WITH_VCPKG.md)
-- [Building on Linux](../master/BUILDING_ON_LINUX.md)
-- [Building on macOS](../master/BUILDING_ON_MAC.md)
-- [Building on FreeBSD](../master/BUILDING_ON_FREEBSD.md)
+NekoChatterino is built on the work of:
 
-## Git blame
+- [Chatterino](https://github.com/Chatterino/chatterino2), a Twitch chat client.
+- [Chatterino Homies](https://github.com/itzAlex/chatterino7), which provides the
+  Homies feature set used by this fork.
 
-This project has big commits in the history which touch most files while only doing stylistic changes. To improve the output of git-blame, consider setting:
-
-```shell
-git config blame.ignoreRevsFile .git-blame-ignore-revs
-```
-
-This will ignore all revisions mentioned in the [`.git-blame-ignore-revs`
-file](./.git-blame-ignore-revs). GitHub does this by default.
-
-## Code style
-
-The code is formatted using [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Our configuration is found in the [.clang-format](.clang-format) file in the repository root directory.
-
-For more contribution guidelines, take a look at [the wiki](https://wiki.chatterino.com/Contributing%20for%20Developers/).
-
-## Doxygen
-
-Doxygen is used to generate project information daily and is available [here](https://doxygen.chatterino.com).
+This is an independent community fork and is not an official Chatterino or
+Chatterino Homies release. The project remains available under the licenses in
+this repository.
