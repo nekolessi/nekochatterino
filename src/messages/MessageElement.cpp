@@ -1183,8 +1183,8 @@ MentionElement::MentionElement(QStringList &&words, MessageColor fallbackColor_,
                                MessageColor userColor_)
     : TextElement(std::move(words),
                   {MessageElementFlag::Text, MessageElementFlag::Mention})
-    , fallbackColor(fallbackColor_)
-    , userColor(userColor_)
+    , fallbackColor_(fallbackColor_)
+    , userColor_(userColor_)
 {
 }
 
@@ -1231,7 +1231,7 @@ void MentionElement::addToContainer(MessageLayoutContainer &container,
 std::unique_ptr<MessageElement> MentionElement::clone() const
 {
     std::unique_ptr<MentionElement> el{new MentionElement(
-        this->words(), this->fallbackColor, this->userColor)};
+        this->words(), this->fallbackColor_, this->userColor_)};
     el->cloneFrom(*this);
     return el;
 }

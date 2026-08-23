@@ -393,6 +393,8 @@ public:
 
     Link getLink() const override;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
     [[nodiscard]] LinkInfo *linkInfo()
     {
         return &this->linkInfo_;
@@ -592,8 +594,6 @@ public:
 protected:
     virtual MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
                                                          QSizeF size);
-
-private:
     EmotePtr emote_;
 };
 
