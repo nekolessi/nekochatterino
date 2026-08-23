@@ -34,10 +34,6 @@
 
 #include <memory>
 
-#ifdef CHATTERINO_WITH_AVIF_PLUGIN
-Q_IMPORT_PLUGIN(QAVIFPlugin)
-#endif
-
 using namespace chatterino;
 
 int main(int argc, char **argv)
