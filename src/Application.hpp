@@ -1,6 +1,8 @@
-#pragma once
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
 
-#include "singletons/NativeMessaging.hpp"
+#pragma once
 
 #include <cassert>
 #include <memory>
@@ -34,8 +36,7 @@ class WindowManager;
 class ILogging;
 class Logging;
 class Paths;
-class Emotes;
-class IEmotes;
+class EmoteController;
 class Settings;
 class Fonts;
 class Toasts;
@@ -43,6 +44,7 @@ class IChatterinoBadges;
 class ChatterinoBadges;
 class SeventvPaints;
 class FfzBadges;
+class BttvBadges;
 class SeventvBadges;
 class SeventvPersonalEmotes;
 class HomiesBadges;
@@ -58,12 +60,14 @@ class HomiesEmotes;
 class ILinkResolver;
 class IStreamerMode;
 class ITwitchUsers;
+class NativeMessagingServer;
 namespace pronouns {
-    class Pronouns;
+class Pronouns;
 }  // namespace pronouns
 namespace eventsub {
-    class IController;
+class IController;
 }  // namespace eventsub
+class SpellChecker;
 
 class IApplication
 {
@@ -82,7 +86,7 @@ public:
     virtual const Args &getArgs() = 0;
     virtual Theme *getThemes() = 0;
     virtual Fonts *getFonts() = 0;
-    virtual IEmotes *getEmotes() = 0;
+    virtual EmoteController *getEmotes() = 0;
     virtual AccountController *getAccounts() = 0;
     virtual HotkeyController *getHotkeys() = 0;
     virtual WindowManager *getWindows() = 0;
@@ -96,7 +100,7 @@ public:
     virtual ILogging *getChatLogger() = 0;
     virtual IChatterinoBadges *getChatterinoBadges() = 0;
     virtual FfzBadges *getFfzBadges() = 0;
-    virtual HomiesBadges *getHomiesBadges() = 0;
+    virtual BttvBadges *getBttvBadges() = 0;
     virtual SeventvBadges *getSeventvBadges() = 0;
     virtual IUserDataController *getUserData() = 0;
     virtual ISoundController *getSound() = 0;
@@ -122,6 +126,7 @@ public:
     virtual ITwitchUsers *getTwitchUsers() = 0;
     virtual pronouns::Pronouns *getPronouns() = 0;
     virtual eventsub::IController *getEventSub() = 0;
+    virtual SpellChecker *getSpellChecker() = 0;
 };
 
 class Application : public IApplication
@@ -148,7 +153,8 @@ public:
 
     void initialize(Settings &settings, const Paths &paths);
     void load();
-    void save();
+    void aboutToQuit();
+    void stop();
 
     int run();
 
@@ -157,8 +163,8 @@ public:
 private:
     std::unique_ptr<Theme> themes;
     std::unique_ptr<Fonts> fonts;
-    const std::unique_ptr<Logging> logging;
-    std::unique_ptr<Emotes> emotes;
+    std::unique_ptr<Logging> logging;
+    std::unique_ptr<EmoteController> emotes;
     std::unique_ptr<AccountController> accounts;
     std::unique_ptr<eventsub::IController> eventSub;
     std::unique_ptr<HotkeyController> hotkeys;
@@ -172,6 +178,7 @@ private:
     std::unique_ptr<HighlightController> highlights;
     std::unique_ptr<TwitchIrcServer> twitch;
     std::unique_ptr<FfzBadges> ffzBadges;
+    std::unique_ptr<BttvBadges> bttvBadges;
     std::unique_ptr<SeventvBadges> seventvBadges;
     std::unique_ptr<SeventvPaints> seventvPaints;
     std::unique_ptr<SeventvPersonalEmotes> seventvPersonalEmotes;
@@ -192,6 +199,7 @@ private:
     std::unique_ptr<IStreamerMode> streamerMode;
     std::unique_ptr<ITwitchUsers> twitchUsers;
     std::unique_ptr<pronouns::Pronouns> pronouns;
+    std::unique_ptr<SpellChecker> spellChecker;
 #ifdef CHATTERINO_HAVE_PLUGINS
     std::unique_ptr<PluginController> plugins;
 #endif
@@ -207,7 +215,7 @@ public:
     }
     Theme *getThemes() override;
     Fonts *getFonts() override;
-    IEmotes *getEmotes() override;
+    EmoteController *getEmotes() override;
     AccountController *getAccounts() override;
     HotkeyController *getHotkeys() override;
     WindowManager *getWindows() override;
@@ -220,7 +228,7 @@ public:
     PubSub *getTwitchPubSub() override;
     ILogging *getChatLogger() override;
     FfzBadges *getFfzBadges() override;
-    HomiesBadges *getHomiesBadges() override;
+    BttvBadges *getBttvBadges() override;
     SeventvBadges *getSeventvBadges() override;
     IUserDataController *getUserData() override;
     ISoundController *getSound() override;
@@ -249,13 +257,12 @@ public:
     ILinkResolver *getLinkResolver() override;
     IStreamerMode *getStreamerMode() override;
     ITwitchUsers *getTwitchUsers() override;
+    SpellChecker *getSpellChecker() override;
 
 private:
-    void initBttvLiveUpdates();
-    void initSeventvEventAPI();
     void initNm(const Paths &paths);
 
-    NativeMessagingServer nmServer;
+    std::unique_ptr<NativeMessagingServer> nmServer;
     Updates &updates;
 
     bool initialized{false};
@@ -265,5 +272,7 @@ IApplication *getApp();
 
 /// Might return `nullptr` if the app is being destroyed
 IApplication *tryGetApp();
+
+bool isAppAboutToQuit();
 
 }  // namespace chatterino

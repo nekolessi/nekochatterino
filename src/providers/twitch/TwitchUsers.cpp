@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/twitch/TwitchUsers.hpp"
 
 #include "common/QLogging.hpp"
@@ -82,6 +86,7 @@ std::shared_ptr<TwitchUser> TwitchUsersPrivate::makeUnresolved(const UserId &id)
                                     .id = id.string,
                                     .name = {},
                                     .displayName = {},
+                                    .profilePictureUrl = {},
                                 }))
                    .first->second;
     if (id.string.isEmpty())

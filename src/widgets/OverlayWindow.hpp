@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Channel.hpp"
@@ -34,6 +38,7 @@ public:
     bool isInert() const;
     void setInert(bool inert);
     void toggleInertia();
+    void drawOutline(QPainter &painter) override;
 
 protected:
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)

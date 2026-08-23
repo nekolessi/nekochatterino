@@ -1,10 +1,16 @@
+// SPDX-FileCopyrightText: 2025 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/twitch/eventsub/MessageBuilder.hpp"
 
 #include "Application.hpp"
 #include "common/Literals.hpp"
 #include "messages/Emote.hpp"
+#include "messages/Image.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "messages/MessageElement.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/StreamerMode.hpp"
@@ -143,7 +149,6 @@ EventSubMessageBuilder::EventSubMessageBuilder(TwitchChannel *channel,
 {
     this->emplace<TimestampElement>(time.time());
     this->message().flags.set(MessageFlag::System, MessageFlag::EventSub);
-    this->message().flags.set(MessageFlag::Timeout);  // do we need this?
     this->message().serverReceivedTime = time;
 }
 
@@ -160,9 +165,9 @@ void EventSubMessageBuilder::appendUser(const lib::String &userName,
                                         QString &text, bool trailingSpace)
 {
     auto login = userLogin.qt();
-    auto *el = this->emplace<MentionElement>(userName.qt(), login,
-                                             MessageColor::System,
-                                             channel->getUserColor(login));
+    auto *el = this->emplace<MentionElement>(
+        userName.qt(), login, MessageColor::System,
+        this->channel->getUserColor(login));
     text.append(login);
 
     if (trailingSpace)
@@ -217,6 +222,7 @@ void makeModerateMessage(EventSubMessageBuilder &builder,
                          const lib::payload::channel_moderate::v2::Event &event,
                          const lib::payload::channel_moderate::v2::Warn &action)
 {
+    builder->flags.set(MessageFlag::ModerationAction);
     QString text;
 
     builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
@@ -251,43 +257,13 @@ void makeModerateMessage(EventSubMessageBuilder &builder,
     builder.setMessageAndSearchText(text);
 }
 
-void makeModerateMessage(EventSubMessageBuilder &builder,
-                         const lib::payload::channel_moderate::v2::Event &event,
-                         const lib::payload::channel_moderate::v2::Ban &action)
-{
-    QString text;
-    bool isShared = event.isFromSharedChat();
-
-    builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
-    builder.emplaceSystemTextAndUpdate("banned", text);
-    builder.appendUser(action.userName, action.userLogin, text, isShared);
-
-    if (isShared)
-    {
-        builder.emplaceSystemTextAndUpdate("in", text);
-        builder.appendUser(*event.sourceBroadcasterUserName,
-                           *event.sourceBroadcasterUserLogin, text, false);
-    }
-
-    if (action.reason.view().empty())
-    {
-        builder.emplaceSystemTextAndUpdate(".", text);
-    }
-    else
-    {
-        builder.emplaceSystemTextAndUpdate(":", text);
-        builder.emplaceSystemTextAndUpdate(action.reason.qt(), text);
-    }
-
-    builder.setMessageAndSearchText(text);
-    builder->timeoutUser = action.userLogin.qt();
-}
-
 void makeModerateMessage(
     EventSubMessageBuilder &builder,
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Unban &action)
 {
+    builder->flags.set(MessageFlag::ModerationAction, MessageFlag::Untimeout);
+
     QString text;
     bool isShared = event.isFromSharedChat();
 
@@ -313,10 +289,11 @@ void makeModerateMessage(
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Untimeout &action)
 {
+    builder->flags.set(MessageFlag::ModerationAction, MessageFlag::Untimeout);
+
     QString text;
     bool isShared = event.isFromSharedChat();
 
-    builder->flags.set(MessageFlag::Timeout);
     builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
     builder.emplaceSystemTextAndUpdate("untimedout", text);
     builder.appendUser(action.userName, action.userLogin, text, isShared);
@@ -339,7 +316,8 @@ void makeModerateMessage(
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Delete &action)
 {
-    builder.message().flags.set(MessageFlag::DoNotTriggerNotification);
+    builder->flags.set(MessageFlag::DoNotTriggerNotification,
+                       MessageFlag::ModerationAction);
 
     QString text;
     bool isShared = event.isFromSharedChat();
@@ -357,14 +335,15 @@ void makeModerateMessage(
 
     builder.emplaceSystemTextAndUpdate("saying:", text);
 
-    if (action.messageBody.view().length() > 50)
+    auto limit = getSettings()->deletedMessageLengthLimit.getValue();
+    if (limit > 0 && action.messageBody.view().length() > limit)
     {
         builder
-            .emplace<TextElement>(action.messageBody.qt().left(50) + "…",
+            .emplace<TextElement>(action.messageBody.qt().left(limit) + "…",
                                   MessageElementFlag::Text, MessageColor::Text)
             ->setLink({Link::JumpToMessage, action.messageID.qt()});
 
-        text.append(action.messageBody.qt().left(50) + "…");
+        text.append(action.messageBody.qt().left(limit) + "…");
     }
     else
     {
@@ -465,6 +444,8 @@ void makeModerateMessage(
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::AutomodTerms &action)
 {
+    builder->flags.set(MessageFlag::ModerationAction);
+
     QString text;
 
     builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
@@ -580,6 +561,40 @@ void makeModerateMessage(
     builder.setMessageAndSearchText(text);
 }
 
+void makeModerateMessage(
+    EventSubMessageBuilder &builder,
+    const lib::payload::channel_moderate::v2::Event &event,
+    const lib::payload::channel_moderate::v2::UnbanRequest &action)
+{
+    builder->flags.set(MessageFlag::ModerationAction);
+
+    QString text;
+
+    builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
+    if (action.isApproved)
+    {
+        builder.emplaceSystemTextAndUpdate("approved", text);
+    }
+    else
+    {
+        builder.emplaceSystemTextAndUpdate("denied", text);
+    }
+    builder.appendOrEmplaceSystemTextAndUpdate("the unban request from", text);
+    builder.appendUser(action.userName, action.userLogin, text, false);
+    if (action.moderatorMessage.isEmpty())
+    {
+        builder.emplaceSystemTextAndUpdate(".", text);
+    }
+    else
+    {
+        builder.emplaceSystemTextAndUpdate(":", text);
+        builder.appendOrEmplaceSystemTextAndUpdate(action.moderatorMessage.qt(),
+                                                   text);
+    }
+
+    builder.setMessageAndSearchText(text);
+}
+
 MessagePtr makeAutomodHoldMessageHeader(
     TwitchChannel *channel, const QDateTime &time,
     const lib::payload::automod_message_hold::v2::Event &event)
@@ -589,7 +604,7 @@ MessagePtr makeAutomodHoldMessageHeader(
     builder->id = u"automod_" % event.messageID.qt();
     builder->loginName = u"automod"_s;
     builder->channelName = event.broadcasterUserLogin.qt();
-    builder->flags.set(MessageFlag::PubSub, MessageFlag::Timeout,
+    builder->flags.set(MessageFlag::PubSub, MessageFlag::ModerationAction,
                        MessageFlag::AutoMod,
                        MessageFlag::AutoModOffendingMessageHeader);
     builder->flags.set(
@@ -637,7 +652,7 @@ MessagePtr makeAutomodHoldMessageBody(
 {
     EventSubMessageBuilder builder(channel);
     builder->serverReceivedTime = time;
-    builder->flags.set(MessageFlag::PubSub, MessageFlag::Timeout,
+    builder->flags.set(MessageFlag::PubSub, MessageFlag::ModerationAction,
                        MessageFlag::AutoMod,
                        MessageFlag::AutoModOffendingMessage);
     builder->flags.set(
@@ -696,10 +711,12 @@ MessagePtr makeSuspiciousUserMessageHeader(
     if (event.lowTrustStatus == lib::suspicious_users::Status::Restricted)
     {
         headerMessage = u"Restricted"_s;
+        builder->flags.set(MessageFlag::RestrictedMessage);
     }
     else
     {
         headerMessage = u"Monitored"_s;
+        builder->flags.set(MessageFlag::MonitoredMessage);
     }
 
     auto hasType = [&](lib::suspicious_users::Type type) {
@@ -784,7 +801,8 @@ MessagePtr makeSuspiciousUserUpdate(
     const lib::payload::channel_suspicious_user_update::v1::Event &event)
 {
     EventSubMessageBuilder builder(channel, time);
-    builder->flags.set(MessageFlag::DoNotTriggerNotification);
+    builder->flags.set(MessageFlag::DoNotTriggerNotification,
+                       MessageFlag::ModerationAction);
     builder->loginName = event.moderatorUserLogin.qt();
 
     QString text;
@@ -833,8 +851,7 @@ MessagePtr makeUserMessageHeldMessage(
     builder->id = u"automod_" % event.messageID.qt();
     builder->loginName = u"automod"_s;
     builder->channelName = event.broadcasterUserLogin.qt();
-    builder->flags.set(MessageFlag::PubSub, MessageFlag::Timeout,
-                       MessageFlag::AutoMod);
+    builder->flags.set(MessageFlag::PubSub, MessageFlag::AutoMod);
 
     // AutoMod shield badge
     builder.emplace<BadgeElement>(makeAutoModBadge(),
@@ -863,8 +880,7 @@ MessagePtr makeUserMessageUpdateMessage(
     builder->id = u"automod_" % event.messageID.qt();
     builder->loginName = u"automod"_s;
     builder->channelName = event.broadcasterUserLogin.qt();
-    builder->flags.set(MessageFlag::PubSub, MessageFlag::Timeout,
-                       MessageFlag::AutoMod);
+    builder->flags.set(MessageFlag::PubSub, MessageFlag::AutoMod);
 
     // AutoMod shield badge
     builder.emplace<BadgeElement>(makeAutoModBadge(),

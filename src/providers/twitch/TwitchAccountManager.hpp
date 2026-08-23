@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/ChatterinoSetting.hpp"
@@ -23,6 +27,8 @@ namespace chatterino {
 
 class TwitchAccount;
 class AccountController;
+
+extern const std::vector<QStringView> AUTH_SCOPES;
 
 class TwitchAccountManager
 {
@@ -53,9 +59,18 @@ public:
 
     pajlada::Settings::Setting<QString> currentUsername{"/accounts/current",
                                                         ""};
-    // pajlada::Signals::NoArgSignal currentUserChanged;
+
+    /// This signal fires after we've figured out what the new account is, but before
+    /// any updates to Helix have been made.
+    ///
+    /// Useful for scenarios where you have to call Helix using the previous account.
+    pajlada::Signals::Signal<std::shared_ptr<TwitchAccount>,
+                             std::shared_ptr<TwitchAccount>>
+        currentUserAboutToChange;
+
     boost::signals2::signal<void()> currentUserChanged;
     pajlada::Signals::NoArgSignal userListUpdated;
+    pajlada::Signals::NoArgSignal currentUserNameChanged;
 
     SignalVector<std::shared_ptr<TwitchAccount>> accounts;
 

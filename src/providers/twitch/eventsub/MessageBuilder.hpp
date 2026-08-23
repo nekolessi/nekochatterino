@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "messages/MessageBuilder.hpp"
@@ -60,11 +64,6 @@ void makeModerateMessage(
     EventSubMessageBuilder &builder,
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Warn &action);
-
-/// <MODERATOR> banned <USER>[ in <CHANNEL>]: <REASON>
-void makeModerateMessage(EventSubMessageBuilder &builder,
-                         const lib::payload::channel_moderate::v2::Event &event,
-                         const lib::payload::channel_moderate::v2::Ban &action);
 
 /// <MODERATOR> unbanned <USER>[ in <CHANNEL>].
 void makeModerateMessage(
@@ -159,6 +158,12 @@ void makeModerateMessage(
     EventSubMessageBuilder &builder,
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Unraid &action);
+
+/// <MODERATOR> {approved/denied} the unban request from <USER>[: <MESSAGE>]
+void makeModerateMessage(
+    EventSubMessageBuilder &builder,
+    const lib::payload::channel_moderate::v2::Event &event,
+    const lib::payload::channel_moderate::v2::UnbanRequest &action);
 
 MessagePtr makeAutomodHoldMessageHeader(
     TwitchChannel *channel, const QDateTime &time,

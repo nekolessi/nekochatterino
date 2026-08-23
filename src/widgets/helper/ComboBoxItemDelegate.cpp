@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/helper/ComboBoxItemDelegate.hpp"
 
 #include <QComboBox>
@@ -19,7 +23,7 @@ QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
 {
     QVariant data = index.data(Qt::UserRole + 1);
 
-    if (data.type() != QVariant::StringList)
+    if (data.metaType() != QMetaType::fromType<QStringList>())
     {
         return QStyledItemDelegate::createEditor(parent, option, index);
     }

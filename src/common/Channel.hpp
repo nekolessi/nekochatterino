@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/enums/MessageContext.hpp"
@@ -19,14 +23,7 @@ namespace chatterino {
 
 struct Message;
 using MessagePtr = std::shared_ptr<const Message>;
-
-enum class TimeoutStackStyle : int {
-    StackHard = 0,
-    DontStackBeyondUserMessage = 1,
-    DontStack = 2,
-
-    Default = DontStackBeyondUserMessage,
-};
+using MessagePtrMut = std::shared_ptr<Message>;
 
 class Channel : public std::enable_shared_from_this<Channel>, public MessageSink
 {
@@ -35,16 +32,28 @@ public:
     /**
      * @exposeenum c2.ChannelType
      */
-    enum class Type {
+    enum class Type : std::uint8_t {
+        /// This channel may not be backed by a real channel.
+        ///
+        /// Messages sent to this channel are not logged.
         None,
+        /// Direct
         Direct,
+        /// Twitch
         Twitch,
+        /// TwitchWhispers
         TwitchWhispers,
+        /// TwitchWatching
         TwitchWatching,
+        /// TwitchMentions
         TwitchMentions,
+        /// TwitchLive
         TwitchLive,
+        /// TwitchAutomod
         TwitchAutomod,
+        /// TwitchEnd
         TwitchEnd,
+        /// Misc
         Misc,
     };
 
@@ -52,11 +61,6 @@ public:
     ~Channel() override;
 
     // SIGNALS
-    pajlada::Signals::Signal<const QString &, const QString &, bool &>
-        sendMessageSignal;
-    pajlada::Signals::Signal<const QString &, const QString &, const QString &,
-                             bool &>
-        sendReplySignal;
     pajlada::Signals::Signal<MessagePtr &, std::optional<MessageFlags>>
         messageAppended;
     pajlada::Signals::Signal<std::vector<MessagePtr> &> messagesAddedAtStart;
@@ -65,7 +69,6 @@ public:
         messageReplaced;
     /// Invoked when some number of messages were filled in using time received
     pajlada::Signals::Signal<const std::vector<MessagePtr> &> filledInMessages;
-    pajlada::Signals::NoArgSignal destroyed;
     pajlada::Signals::NoArgSignal displayNameChanged;
     pajlada::Signals::NoArgSignal messagesCleared;
 
@@ -75,7 +78,19 @@ public:
     virtual const QString &getLocalizedName() const;
     bool isTwitchChannel() const;
     virtual bool isEmpty() const;
-    LimitedQueueSnapshot<MessagePtr> getMessageSnapshot();
+
+    std::vector<MessagePtr> getMessageSnapshot() const;
+    std::vector<MessagePtr> getMessageSnapshot(size_t nItems) const;
+
+    /// Essentially the same as #getMessageSnapshot(size_t), but the returned
+    /// vector holds `std::shared_ptr<Message>`. This should only be used in
+    /// plugins, because they take messages as `Message` but check that they're
+    /// frozen.
+    std::vector<MessagePtrMut> getMessageSnapshotMut(size_t nItems) const;
+
+    /// Returns the last message (the one at the bottom). If the channel has no
+    /// messages, this will return an empty shared pointer.
+    MessagePtr getLastMessage() const;
 
     // MESSAGES
     // overridingFlags can be filled in with flags that should be used instead
@@ -108,6 +123,8 @@ public:
 
     bool hasMessages() const;
 
+    size_t countMessages() const;
+
     void applySimilarityFilters(const MessagePtr &message) const final;
 
     MessageSinkTraits sinkTraits() const final;
@@ -135,7 +152,7 @@ public:
 protected:
     virtual void onConnected();
     virtual void messageRemovedFromStart(const MessagePtr &msg);
-    QString platform_{"other"};
+    QString platform_;
 
 private:
     const QString name_;
@@ -164,7 +181,7 @@ public:
     ChannelPtr get() const;
     void reset(ChannelPtr channel);
     pajlada::Signals::NoArgSignal &getChannelChanged();
-    Channel::Type getType();
+    Channel::Type getType() const;
 
 private:
     std::shared_ptr<Data> data_;

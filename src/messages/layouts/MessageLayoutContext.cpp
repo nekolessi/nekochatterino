@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "messages/layouts/MessageLayoutContext.hpp"
 
 #include "singletons/Settings.hpp"
@@ -70,6 +74,12 @@ void MessagePreferences::connectSettings(Settings *settings,
         },
         holder);
 
+    settings->enableWatchStreakHighlight.connect(
+        [this](const auto &newValue) {
+            this->enableWatchStreakHighlight = newValue;
+        },
+        holder);
+
     settings->enableAutomodHighlight.connect(
         [this](const auto &newValue) {
             this->enableAutomodHighlight = newValue;
@@ -104,6 +114,12 @@ void MessagePreferences::connectSettings(Settings *settings,
     settings->lastMessagePattern.connect(
         [this](const auto &newValue) {
             this->lastMessagePattern = static_cast<Qt::BrushStyle>(newValue);
+        },
+        holder);
+
+    settings->fadeMessageHistory.connect(
+        [this](const auto &newValue) {
+            this->fadeMessageHistory = newValue;
         },
         holder);
 }

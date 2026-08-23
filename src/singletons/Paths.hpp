@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <QString>
@@ -18,7 +22,7 @@ public:
     // Directory for settings files. Same as <appDataDirectory>/Settings
     QString settingsDirectory;
 
-    // Directory for message log files. Same as <appDataDirectory>/Misc
+    // Directory for message log files. Same as <appDataDirectory>/Logs
     QString messageLogDirectory;
 
     // Directory for miscellaneous files. Same as <appDataDirectory>/Misc
@@ -39,6 +43,9 @@ public:
     // Custom themes live here. <appDataDirectory>/Themes
     QString themesDirectory;
 
+    // Spell checking dictionaries <appDataDirectory>/Dictionaries
+    QString dictionariesDirectory;
+
     // Directory for shared memory files.
     // <appDataDirectory>/IPC   on Windows
     // /tmp                     elsewhere
@@ -49,6 +56,11 @@ public:
         const;
 
     QString cacheDirectory() const;
+
+    /// Returns the full file path for a file in the cache directory
+    ///
+    /// e.g. cacheFilePath("foo") will return <cacheDirectory>/foo
+    QString cacheFilePath(const QString &fileName) const;
 
 private:
     void initAppFilePathHash();

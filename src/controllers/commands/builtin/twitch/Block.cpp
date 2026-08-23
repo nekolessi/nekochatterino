@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "controllers/commands/builtin/twitch/Block.hpp"
 
 #include "Application.hpp"
@@ -53,7 +57,7 @@ QString blockUser(const CommandContext &ctx)
         [currentUser, channel{ctx.channel},
          target](const HelixUser &targetUser) {
             getApp()->getAccounts()->twitch.getCurrent()->blockUser(
-                targetUser.id, nullptr,
+                targetUser.id, targetUser.login, nullptr,
                 [channel, target, targetUser] {
                     channel->addSystemMessage(
                         QString("You successfully blocked user %1")
@@ -125,7 +129,7 @@ QString unblockUser(const CommandContext &ctx)
         target,
         [currentUser, channel{ctx.channel}, target](const auto &targetUser) {
             getApp()->getAccounts()->twitch.getCurrent()->unblockUser(
-                targetUser.id, nullptr,
+                targetUser.id, targetUser.login, nullptr,
                 [channel, target, targetUser] {
                     channel->addSystemMessage(
                         QString("You successfully unblocked user %1")

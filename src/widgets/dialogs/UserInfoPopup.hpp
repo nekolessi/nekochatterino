@@ -1,15 +1,16 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "singletons/Paths.hpp"
 #include "widgets/BaseWindow.hpp"
 #include "widgets/DraggablePopup.hpp"
-#include "widgets/helper/EffectLabel.hpp"
 
 #include <pajlada/signals/scoped-connection.hpp>
 #include <pajlada/signals/signal.hpp>
-#include <QPixmap>
-
-#include <chrono>
+#include <QPointer>
 
 class QCheckBox;
 class QMovie;
@@ -22,9 +23,13 @@ inline static const QString SEVENTV_USER_API =
 class Channel;
 using ChannelPtr = std::shared_ptr<Channel>;
 class Label;
+class MarkdownLabel;
+class EditUserNotesDialog;
 class ChannelView;
 class Split;
-struct HelixUser;
+class LabelButton;
+class PixmapButton;
+class LiveIndicator;
 
 class UserInfoPopup final : public DraggablePopup
 {
@@ -44,11 +49,13 @@ public:
 protected:
     void themeChangedEvent() override;
     void scaleChangedEvent(float scale) override;
+    void windowDeactivationEvent() override;
 
 private:
     void installEvents();
     void updateUserData();
     void updateLatestMessages();
+    void updateNotes();
 
     void loadAvatar(const HelixUser &user);
 
@@ -80,6 +87,8 @@ private:
     pajlada::Signals::NoArgSignal userStateChanged_;
 
     std::unique_ptr<pajlada::Signals::ScopedConnection> refreshConnection_;
+    std::unique_ptr<pajlada::Signals::ScopedConnection>
+        userDataUpdatedConnection_;
 
     // If we should close the dialog automatically if the user clicks out
     // Set based on the "Automatically close usercard when it loses focus" setting
@@ -87,8 +96,8 @@ private:
     const bool closeAutomatically_;
 
     struct {
-        Button *avatarButton = nullptr;
-        Button *localizedNameCopyButton = nullptr;
+        PixmapButton *avatarButton = nullptr;
+        PixmapButton *localizedNameCopyButton = nullptr;
 
         Label *nameLabel = nullptr;
         Label *localizedNameLabel = nullptr;
@@ -99,19 +108,20 @@ private:
         Label *followageLabel = nullptr;
         Label *subageLabel = nullptr;
 
+        LiveIndicator *liveIndicator = nullptr;
+
         QCheckBox *block = nullptr;
         QCheckBox *ignoreHighlights = nullptr;
+        MarkdownLabel *notesPreview = nullptr;
+        LabelButton *notesAdd = nullptr;
 
         Label *noMessagesLabel = nullptr;
         ChannelView *latestMessages = nullptr;
 
-        EffectLabel2 *usercardLabel = nullptr;
-        EffectLabel2 *switchAvatars = nullptr;
+        LabelButton *usercardLabel = nullptr;
     } ui_;
 
-    QMovie *seventvAvatar_ = nullptr;
-    bool isTwitchAvatarShown_ = true;
-    QPixmap avatarPixmap_;
+    QPointer<EditUserNotesDialog> editUserNotesDialog_;
 
     class TimeoutWidget : public BaseWidget
     {

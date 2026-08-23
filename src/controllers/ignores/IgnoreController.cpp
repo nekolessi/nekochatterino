@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "controllers/ignores/IgnoreController.hpp"
 
 #include "Application.hpp"
@@ -149,16 +153,27 @@ bool isIgnoredMessage(IgnoredMessageParameters &&params)
         }
     }
 
-    if (!params.twitchUserID.isEmpty() &&
-        getSettings()->enableTwitchBlockedUsers)
+    if (getSettings()->enableTwitchBlockedUsers)
     {
-        auto sourceUserID = params.twitchUserID;
+        bool isBlocked = false;
 
-        bool isBlocked = getApp()
-                             ->getAccounts()
-                             ->twitch.getCurrent()
-                             ->blockedUserIds()
-                             .contains(sourceUserID);
+        if (!params.twitchUserID.isEmpty())
+        {
+            isBlocked = getApp()
+                            ->getAccounts()
+                            ->twitch.getCurrent()
+                            ->blockedUserIds()
+                            .contains(params.twitchUserID);
+        }
+        else if (!params.twitchUserLogin.isEmpty())
+        {
+            isBlocked = getApp()
+                            ->getAccounts()
+                            ->twitch.getCurrent()
+                            ->blockedUserLogins()
+                            .contains(params.twitchUserLogin);
+        }
+
         if (isBlocked)
         {
             switch (static_cast<ShowIgnoredUsersMessages>(

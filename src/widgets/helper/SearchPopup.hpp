@@ -1,7 +1,10 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "ForwardDecl.hpp"
-#include "messages/LimitedQueueSnapshot.hpp"
 #include "widgets/BasePopup.hpp"
 
 #include <memory>
@@ -32,12 +35,13 @@ protected:
     virtual void updateWindowTitle();
     void showEvent(QShowEvent *event) override;
     bool eventFilter(QObject *object, QEvent *event) override;
+    void themeChangedEvent() override;
 
 private:
     void initLayout();
     void search();
     void addShortcuts() override;
-    LimitedQueueSnapshot<MessagePtr> buildSnapshot();
+    std::vector<MessagePtr> buildSnapshot();
 
     /**
      * @brief Only retains those message from a list of messages that satisfy a
@@ -52,7 +56,7 @@ private:
      *         "snapshot"
      */
     static ChannelPtr filter(const QString &text, const QString &channelName,
-                             const LimitedQueueSnapshot<MessagePtr> &snapshot);
+                             const std::vector<MessagePtr> &snapshot);
 
     /**
      * @brief Checks the input for tags and registers their corresponding
@@ -64,7 +68,7 @@ private:
     static std::vector<std::unique_ptr<MessagePredicate>> parsePredicates(
         const QString &input);
 
-    LimitedQueueSnapshot<MessagePtr> snapshot_;
+    std::vector<MessagePtr> snapshot_;
     QLineEdit *searchInput_{};
     ChannelView *channelView_{};
     QString channelName_{};

@@ -1,7 +1,12 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "messages/MessageElement.hpp"
 
 #include "Application.hpp"
 #include "common/Literals.hpp"
+#include "controllers/emotes/EmoteController.hpp"
 #include "controllers/moderationactions/ModerationAction.hpp"
 #include "debug/Benchmark.hpp"
 #include "messages/Emote.hpp"
@@ -10,7 +15,7 @@
 #include "messages/layouts/MessageLayoutContext.hpp"
 #include "messages/layouts/MessageLayoutElement.hpp"
 #include "providers/emoji/Emojis.hpp"
-#include "singletons/Emotes.hpp"
+#include "providers/twitch/TwitchEmotes.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
 #include "util/DebugCount.hpp"
@@ -20,7 +25,9 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
-#include <memory>
+#ifdef CHATTERINO_WITH_PRIVATE_QT_API
+#    include <QtGui/private/qtextengine_p.h>
+#endif
 
 namespace chatterino {
 
@@ -28,31 +35,32 @@ using namespace literals;
 
 namespace {
 
-    // Computes the bounding box for the given vector of images
-    QSize getBoundingBoxSize(const std::vector<ImagePtr> &images)
+// Computes the bounding box for the given vector of images
+QSizeF getBoundingBoxSize(const std::vector<ImagePtr> &images)
+{
+    qreal width = 0;
+    qreal height = 0;
+    for (const auto &img : images)
     {
-        int width = 0;
-        int height = 0;
-        for (const auto &img : images)
-        {
-            width = std::max(width, img->width());
-            height = std::max(height, img->height());
-        }
-
-        return QSize(width, height);
+        QSizeF s = img->size();
+        width = std::max(width, s.width());
+        height = std::max(height, s.height());
     }
+
+    return {width, height};
+}
 
 }  // namespace
 
 MessageElement::MessageElement(MessageElementFlags flags)
     : flags_(flags)
 {
-    DebugCount::increase("message elements");
+    DebugCount::increase(DebugObject::MessageElement);
 }
 
 MessageElement::~MessageElement()
 {
-    DebugCount::decrease("message elements");
+    DebugCount::decrease(DebugObject::MessageElement);
 }
 
 MessageElement *MessageElement::setLink(const Link &link)
@@ -134,11 +142,8 @@ void ImageElement::addToContainer(MessageLayoutContainer &container,
 {
     if (ctx.flags.hasAny(this->getFlags()))
     {
-        auto size = QSize(this->image_->width() * container.getScale(),
-                          this->image_->height() * container.getScale());
-
-        container.addElement(
-            (new ImageLayoutElement(*this, this->image_, size)));
+        container.addElement(new ImageLayoutElement(
+            *this, this->image_, this->image_->size() * container.getScale()));
     }
 }
 
@@ -156,6 +161,11 @@ QJsonObject ImageElement::toJson() const
     base["url"_L1] = this->image_->url().string;
 
     return base;
+}
+
+std::string_view ImageElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 CircularImageElement::CircularImageElement(ImagePtr image, int padding,
@@ -200,15 +210,18 @@ QJsonObject CircularImageElement::toJson() const
     return base;
 }
 
+std::string_view CircularImageElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // EMOTE
 EmoteElement::EmoteElement(const EmotePtr &emote, MessageElementFlags flags,
                            const MessageColor &textElementColor)
     : MessageElement(flags)
+    , textColor_(textElementColor)
     , emote_(emote)
 {
-    this->textElement_.reset(new TextElement(
-        emote->getCopyString(), MessageElementFlag::Misc, textElementColor));
-
     this->setTooltip(emote->tooltip.string);
 }
 
@@ -220,50 +233,61 @@ EmotePtr EmoteElement::getEmote() const
 void EmoteElement::addToContainer(MessageLayoutContainer &container,
                                   const MessageLayoutContext &ctx)
 {
-    if (ctx.flags.hasAny(this->getFlags()))
+    if (ctx.flags.hasNone(this->getFlags()))
     {
-        if (ctx.flags.has(MessageElementFlag::EmoteImages))
+        return;
+    }
+
+    if (ctx.flags.has(MessageElementFlag::EmoteImage))
+    {
+        auto image =
+            this->emote_->images.getImageOrLoaded(container.getImageScale());
+
+        if (image->isEmpty())
         {
-            auto image = this->emote_->images.getImageOrLoaded(
-                container.getImageScale());
-            if (image->isEmpty())
-            {
-                return;
-            }
-
-            auto emoteScale = getSettings()->emoteScale.getValue();
-
-            auto size =
-                QSize(int(container.getScale() * image->width() * emoteScale),
-                      int(container.getScale() * image->height() * emoteScale));
-
-            container.addElement(this->makeImageLayoutElement(image, size));
+            this->ensureText(true);
         }
         else
         {
-            if (this->textElement_)
-            {
-                auto textCtx = ctx;
-                textCtx.flags = MessageElementFlag::Misc;
-                this->textElement_->addToContainer(container, textCtx);
-            }
+            auto emoteScale = getSettings()->emoteScale.getValue();
+
+            auto size = image->size() * container.getScale() * emoteScale;
+
+            container.addElement(this->makeImageLayoutElement(image, size));
+            return;
         }
     }
+    else
+    {
+        this->ensureText(false);
+    }
+
+    auto textCtx = ctx;
+    textCtx.flags = MessageElementFlag::Misc;
+    this->textElement_->addToContainer(container, textCtx);
 }
 
 MessageLayoutElement *EmoteElement::makeImageLayoutElement(
-    const ImagePtr &image, const QSize &size)
+    const ImagePtr &image, QSizeF size)
 {
     return new ImageLayoutElement(*this, image, size);
 }
 
-std::unique_ptr<MessageElement> EmoteElement::clone() const
+void EmoteElement::ensureText(bool asFallback)
 {
-    auto el = std::make_unique<EmoteElement>(this->emote_, this->getFlags());
-    el->textElement_ = std::unique_ptr<TextElement>(
-        dynamic_cast<TextElement *>(this->textElement_->clone().release()));
-    el->cloneFrom(*this);
-    return el;
+    if (this->textElement_ && asFallback == this->usingFallbackColor_)
+    {
+        return;
+    }
+
+    auto color = this->textColor_;
+    if (asFallback)
+    {
+        color = MessageColor::System;
+    }
+    this->textElement_ = std::make_unique<TextElement>(
+        this->emote_->getCopyString(), MessageElementFlag::Misc, color);
+    this->usingFallbackColor_ = asFallback;
 }
 
 QJsonObject EmoteElement::toJson() const
@@ -277,6 +301,11 @@ QJsonObject EmoteElement::toJson() const
     }
 
     return base;
+}
+
+std::string_view EmoteElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 LayeredEmoteElement::LayeredEmoteElement(
@@ -300,7 +329,7 @@ void LayeredEmoteElement::addToContainer(MessageLayoutContainer &container,
 {
     if (ctx.flags.hasAny(this->getFlags()))
     {
-        if (ctx.flags.has(MessageElementFlag::EmoteImages))
+        if (ctx.flags.has(MessageElementFlag::EmoteImage))
         {
             auto images = this->getLoadedImages(container.getImageScale());
             if (images.empty())
@@ -312,12 +341,11 @@ void LayeredEmoteElement::addToContainer(MessageLayoutContainer &container,
             float overallScale = emoteScale * container.getScale();
 
             auto largestSize = getBoundingBoxSize(images) * overallScale;
-            std::vector<QSize> individualSizes;
+            std::vector<QSizeF> individualSizes;
             individualSizes.reserve(this->emotes_.size());
-            for (auto img : images)
+            for (const auto &img : images)
             {
-                individualSizes.push_back(QSize(img->width(), img->height()) *
-                                          overallScale);
+                individualSizes.push_back(img->size() * overallScale);
             }
 
             container.addElement(this->makeImageLayoutElement(
@@ -353,8 +381,8 @@ std::vector<ImagePtr> LayeredEmoteElement::getLoadedImages(float scale)
 }
 
 MessageLayoutElement *LayeredEmoteElement::makeImageLayoutElement(
-    const std::vector<ImagePtr> &images, const std::vector<QSize> &sizes,
-    QSize largestSize)
+    const std::vector<ImagePtr> &images, const std::vector<QSizeF> &sizes,
+    QSizeF largestSize)
 {
     return new LayeredImageLayoutElement(*this, images, sizes, largestSize);
 }
@@ -427,7 +455,7 @@ std::vector<LayeredEmoteElement::Emote> LayeredEmoteElement::getUniqueEmotes()
     struct NotDuplicate {
         bool operator()(const Emote &element)
         {
-            return seen.insert(element.ptr).second;
+            return this->seen.insert(element.ptr).second;
         }
 
     private:
@@ -489,6 +517,11 @@ QJsonObject LayeredEmoteElement::toJson() const
     return base;
 }
 
+std::string_view LayeredEmoteElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // BADGE
 BadgeElement::BadgeElement(const EmotePtr &emote, MessageElementFlags flags)
     : MessageElement(flags)
@@ -509,10 +542,8 @@ void BadgeElement::addToContainer(MessageLayoutContainer &container,
             return;
         }
 
-        auto size = QSize(int(container.getScale() * image->width()),
-                          int(container.getScale() * image->height()));
-
-        container.addElement(this->makeImageLayoutElement(image, size));
+        container.addElement(this->makeImageLayoutElement(
+            image, image->size() * container.getScale()));
     }
 }
 
@@ -522,7 +553,7 @@ EmotePtr BadgeElement::getEmote() const
 }
 
 MessageLayoutElement *BadgeElement::makeImageLayoutElement(
-    const ImagePtr &image, const QSize &size)
+    const ImagePtr &image, QSizeF size)
 {
     auto *element = new ImageLayoutElement(*this, image, size);
 
@@ -545,6 +576,11 @@ QJsonObject BadgeElement::toJson() const
     return base;
 }
 
+std::string_view BadgeElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // MOD BADGE
 ModBadgeElement::ModBadgeElement(const EmotePtr &data,
                                  MessageElementFlags flags_)
@@ -553,7 +589,7 @@ ModBadgeElement::ModBadgeElement(const EmotePtr &data,
 }
 
 MessageLayoutElement *ModBadgeElement::makeImageLayoutElement(
-    const ImagePtr &image, const QSize &size)
+    const ImagePtr &image, QSizeF size)
 {
     static const QColor modBadgeBackgroundColor("#34AE0A");
 
@@ -578,6 +614,11 @@ QJsonObject ModBadgeElement::toJson() const
     return base;
 }
 
+std::string_view ModBadgeElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // VIP BADGE
 VipBadgeElement::VipBadgeElement(const EmotePtr &data,
                                  MessageElementFlags flags_)
@@ -586,7 +627,7 @@ VipBadgeElement::VipBadgeElement(const EmotePtr &data,
 }
 
 MessageLayoutElement *VipBadgeElement::makeImageLayoutElement(
-    const ImagePtr &image, const QSize &size)
+    const ImagePtr &image, QSizeF size)
 {
     auto *element = new ImageLayoutElement(*this, image, size);
 
@@ -608,6 +649,11 @@ QJsonObject VipBadgeElement::toJson() const
     return base;
 }
 
+std::string_view VipBadgeElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // FFZ Badge
 FfzBadgeElement::FfzBadgeElement(const EmotePtr &data,
                                  MessageElementFlags flags_, QColor color_)
@@ -617,7 +663,7 @@ FfzBadgeElement::FfzBadgeElement(const EmotePtr &data,
 }
 
 MessageLayoutElement *FfzBadgeElement::makeImageLayoutElement(
-    const ImagePtr &image, const QSize &size)
+    const ImagePtr &image, QSizeF size)
 {
     auto *element =
         new ImageWithBackgroundLayoutElement(*this, image, size, this->color);
@@ -640,6 +686,11 @@ QJsonObject FfzBadgeElement::toJson() const
     base["color"_L1] = this->color.name(QColor::HexArgb);
 
     return base;
+}
+
+std::string_view FfzBadgeElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 // TEXT
@@ -674,22 +725,21 @@ void TextElement::addToContainer(MessageLayoutContainer &container,
 
     if (ctx.flags.hasAny(this->getFlags()))
     {
-        QFontMetrics metrics =
+        auto metrics =
             app->getFonts()->getFontMetrics(this->style_, container.getScale());
 
         for (const auto &word : this->words_)
         {
             auto wordId = container.nextWordId();
 
-            auto getTextLayoutElement = [&](QString text, int width,
+            auto getTextLayoutElement = [&](QString text, qreal width,
                                             bool hasTrailingSpace) {
                 auto color = this->color_.getColor(ctx.messageColors);
                 app->getThemes()->normalizeColor(color);
 
                 auto *e = new TextLayoutElement(
-                    *this, text, QSize(width, metrics.height()), color,
-                    this->style_, this->color_.type(), container.getScale(),
-                    container.getImageScale() / container.getScale());
+                    *this, text, QSizeF(width, metrics.height()), color,
+                    this->style_, container.getScale());
                 e->setTrailingSpace(hasTrailingSpace);
                 e->setText(text);
                 e->setWordId(wordId);
@@ -720,12 +770,92 @@ void TextElement::addToContainer(MessageLayoutContainer &container,
                 }
             }
 
-            // we done goofed, we need to wrap the text
+            // We done goofed, we need to wrap the text.
+            // If we allow the use of private Qt APIs, we can use Qt's text
+            // engine to accurately calculate the width of the text. Otherwise,
+            // we have to fall back to using horizontalAdvance which has some
+            // corner cases when processing whole words (see #5944).
+#ifdef CHATTERINO_WITH_PRIVATE_QT_API
+            auto font =
+                app->getFonts()->getFont(this->style_, container.getScale());
+
+            // This code is similar to the one from QTextEngine::elidedText in
+            // the mode Qt::ElideRight (because that's essentially what we're
+            // doing here): https://github.com/qt/qtbase/blob/560bf5a07720eaa8cc589f424743db8ed1f1d902/src/gui/text/qtextengine.cpp#L3145
+            // A difference is that, once we detected EOL, we start again.
+
+            // The start of the current line in `word`
+            qsizetype actualStart = 0;
+            // This is treated like a view (from `actualStart`) over the word.
+            // It's a QString because QStackTextEngine doesn't support
+            // QStringViews as arguments.
+            QString view = word;
+
+            // This is essentially a loop over every line of text.
+            do
+            {
+                QStackTextEngine engine(view, font);
+                engine.validate();  // initialize the internal state
+
+                int pos = 0;
+                int nextBreak = 0;
+                QFixed currentWidth = 0;
+                int to = static_cast<int>(view.size());
+                bool needsBreak = false;
+
+                // Find the next grapheme boundary (`nextBreak`) at which we
+                // need to break because the text wouldn't fit into the
+                // container anymore.
+                do
+                {
+                    pos = nextBreak;
+
+                    ++nextBreak;
+                    while (nextBreak < engine.layoutData->string.size() &&
+                           !engine.attributes()[nextBreak].graphemeBoundary)
+                    {
+                        ++nextBreak;
+                    }
+
+                    auto nextWidth =
+                        currentWidth + engine.width(pos, nextBreak - pos);
+                    if (!container.fitsInLine(nextWidth.toReal()))
+                    {
+                        needsBreak = true;
+                        if (pos == 0)
+                        {
+                            // Make sure that we consume at least one glyph.
+                            // So this element will overflow
+                            currentWidth = nextWidth;
+                        }
+                        else
+                        {
+                            // We didn't consume the glyph, it's for the next line
+                            nextBreak = pos;
+                        }
+                        break;
+                    }
+                    currentWidth = nextWidth;
+                } while (nextBreak < to);
+                // Now we either processed the whole text or we need to break
+                container.addElementNoLineBreak(getTextLayoutElement(
+                    word.sliced(actualStart, nextBreak), currentWidth.toReal(),
+                    !needsBreak && this->hasTrailingSpace()));
+                if (needsBreak)
+                {
+                    container.breakLine();
+                }
+
+                actualStart += nextBreak;
+                // Update the view
+                view = QString::fromRawData(word.constData() + actualStart,
+                                            word.size() - actualStart);
+                assert(needsBreak || view.isEmpty());
+            } while (!view.isEmpty());
+#else
             auto textLength = word.length();
             int wordStart = 0;
             width = 0;
-
-            // QChar::isHighSurrogate(text[0].unicode()) ? 2 : 1
 
             for (int i = 0; i < textLength; i++)
             {
@@ -762,6 +892,7 @@ void TextElement::addToContainer(MessageLayoutContainer &container,
             //add the final piece of wrapped text
             container.addElementNoLineBreak(getTextLayoutElement(
                 word.mid(wordStart), width, this->hasTrailingSpace()));
+#endif
         }
     }
 }
@@ -829,6 +960,11 @@ QJsonObject TextElement::toJson() const
     return base;
 }
 
+std::string_view TextElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 SingleLineTextElement::SingleLineTextElement(const QString &text,
                                              MessageElementFlags flags,
                                              const MessageColor &color,
@@ -836,11 +972,8 @@ SingleLineTextElement::SingleLineTextElement(const QString &text,
     : MessageElement(flags)
     , color_(color)
     , style_(style)
+    , words_(text.split(' '))
 {
-    for (const auto &word : text.split(' '))
-    {
-        this->words_.push_back({word, -1});
-    }
 }
 
 void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
@@ -850,17 +983,17 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
 
     if (ctx.flags.hasAny(this->getFlags()))
     {
-        QFontMetrics metrics =
+        auto metrics =
             app->getFonts()->getFontMetrics(this->style_, container.getScale());
 
-        auto getTextLayoutElement = [&](QString text, int width,
+        auto getTextLayoutElement = [&](QString text, qreal width,
                                         bool hasTrailingSpace) {
             auto color = this->color_.getColor(ctx.messageColors);
             app->getThemes()->normalizeColor(color);
 
             auto *e = new TextLayoutElement(
-                *this, text, QSize(width, metrics.height()), color,
-                this->style_, this->color_.type(), container.getScale());
+                *this, text, QSizeF(width, metrics.height()), color,
+                this->style_, container.getScale());
             e->setTrailingSpace(hasTrailingSpace);
             e->setText(text);
 
@@ -874,7 +1007,7 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
         QString currentText;
 
         bool firstIteration = true;
-        for (Word &word : this->words_)
+        for (const auto &word : this->words_)
         {
             if (firstIteration)
             {
@@ -887,11 +1020,11 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
 
             bool done = false;
             for (const auto &parsedWord :
-                 app->getEmotes()->getEmojis()->parse(word.text))
+                 app->getEmotes()->getEmojis()->parse(word))
             {
-                if (parsedWord.type() == typeid(QString))
+                if (std::holds_alternative<QStringView>(parsedWord))
                 {
-                    currentText += boost::get<QString>(parsedWord);
+                    currentText += std::get<QStringView>(parsedWord);
                     QString prev =
                         currentText;  // only increments the ref-count
                     currentText =
@@ -903,20 +1036,19 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
                         break;
                     }
                 }
-                else if (parsedWord.type() == typeid(EmotePtr))
+                else if (std::holds_alternative<EmotePtr>(parsedWord))
                 {
-                    auto emote = boost::get<EmotePtr>(parsedWord);
+                    auto emote = std::get<EmotePtr>(parsedWord);
                     auto image =
                         emote->images.getImageOrLoaded(container.getScale());
                     if (!image->isEmpty())
                     {
                         auto emoteScale = getSettings()->emoteScale.getValue();
 
-                        int currentWidth =
+                        auto currentWidth =
                             metrics.horizontalAdvance(currentText);
                         auto emoteSize =
-                            QSize(image->width(), image->height()) *
-                            (emoteScale * container.getScale());
+                            image->size() * emoteScale * container.getScale();
 
                         if (!container.fitsInLine(currentWidth +
                                                   emoteSize.width()))
@@ -948,7 +1080,7 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
         // Add the last of the pending message text to the container.
         if (!currentText.isEmpty())
         {
-            int width = metrics.horizontalAdvance(currentText);
+            auto width = metrics.horizontalAdvance(currentText);
             container.addElementNoLineBreak(
                 getTextLayoutElement(currentText, width, false));
         }
@@ -970,16 +1102,17 @@ QJsonObject SingleLineTextElement::toJson() const
 {
     auto base = MessageElement::toJson();
     base["type"_L1] = u"SingleLineTextElement"_s;
-    QJsonArray words;
-    for (const auto &word : this->words_)
-    {
-        words.append(word.text);
-    }
+    QJsonArray words = QJsonArray::fromStringList(this->words_);
     base["words"_L1] = words;
     base["color"_L1] = this->color_.toString();
     base["style"_L1] = qmagicenum::enumNameString(this->style_);
 
     return base;
+}
+
+std::string_view SingleLineTextElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 LinkElement::LinkElement(const Parsed &parsed, const QString &fullUrl,
@@ -1030,14 +1163,19 @@ QJsonObject LinkElement::toJson() const
     return base;
 }
 
+std::string_view LinkElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 MentionElement::MentionElement(const QString &displayName, QString loginName_,
                                MessageColor fallbackColor_,
                                MessageColor userColor_)
     : TextElement(displayName,
                   {MessageElementFlag::Text, MessageElementFlag::Mention})
-    , fallbackColor(fallbackColor_)
-    , userColor(userColor_)
-    , userLoginName(std::move(loginName_))
+    , fallbackColor_(fallbackColor_)
+    , userColor_(userColor_)
+    , userLoginName_(std::move(loginName_))
 {
 }
 
@@ -1055,9 +1193,9 @@ MentionElement::MentionElement(const QString &displayName, QString loginName_,
                                MessageColor fallbackColor_, QColor userColor_)
     : TextElement(displayName,
                   {MessageElementFlag::Text, MessageElementFlag::Mention})
-    , fallbackColor(fallbackColor_)
-    , userColor(userColor_.isValid() ? userColor_ : fallbackColor_)
-    , userLoginName(std::move(loginName_))
+    , fallbackColor_(fallbackColor_)
+    , userColor_(userColor_.isValid() ? userColor_ : fallbackColor_)
+    , userLoginName_(std::move(loginName_))
 {
 }
 
@@ -1071,11 +1209,11 @@ void MentionElement::addToContainer(MessageLayoutContainer &container,
 {
     if (getSettings()->colorUsernames)
     {
-        this->color_ = this->userColor;
+        this->color_ = this->userColor_;
     }
     else
     {
-        this->color_ = this->fallbackColor;
+        this->color_ = this->fallbackColor_;
     }
 
     if (getSettings()->boldUsernames)
@@ -1109,24 +1247,29 @@ MessageElement *MentionElement::setLink(const Link &link)
 
 Link MentionElement::getLink() const
 {
-    if (this->userLoginName.isEmpty())
+    if (this->userLoginName_.isEmpty())
     {
         // Some rare mention elements don't have the knowledge of the login name
         return {};
     }
 
-    return {Link::UserInfo, this->userLoginName};
+    return {Link::UserInfo, this->userLoginName_};
 }
 
 QJsonObject MentionElement::toJson() const
 {
     auto base = TextElement::toJson();
     base["type"_L1] = u"MentionElement"_s;
-    base["fallbackColor"_L1] = this->fallbackColor.toString();
-    base["userColor"_L1] = this->userColor.toString();
-    base["userLoginName"_L1] = this->userLoginName;
+    base["fallbackColor"_L1] = this->fallbackColor_.toString();
+    base["userColor"_L1] = this->userColor_.toString();
+    base["userLoginName"_L1] = this->userLoginName_;
 
     return base;
+}
+
+std::string_view MentionElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 // TIMESTAMP
@@ -1149,6 +1292,7 @@ void TimestampElement::addToContainer(MessageLayoutContainer &container,
 {
     if (ctx.flags.hasAny(this->getFlags()))
     {
+        this->setTooltip(this->getTooltip());
         if (getSettings()->timestampFormat != this->format_)
         {
             this->format_ = getSettings()->timestampFormat.getValue();
@@ -1165,8 +1309,19 @@ TextElement *TimestampElement::formatTime(const QTime &time)
 
     QString format = locale.toString(time, getSettings()->timestampFormat);
 
-    return new TextElement(format, MessageElementFlag::Timestamp,
-                           MessageColor::System, FontStyle::ChatMedium);
+    auto *text =
+        new TextElement(format, MessageElementFlag::Timestamp,
+                        MessageColor::System, FontStyle::TimestampMedium);
+    text->setLink(this->getLink());
+    text->setTooltip(this->getTooltip());
+    return text;
+}
+
+MessageElement *TimestampElement::setLink(const Link &link)
+{
+    MessageElement::setLink(link);
+    this->element_->setLink(link);
+    return this;
 }
 
 std::unique_ptr<MessageElement> TimestampElement::clone() const
@@ -1187,6 +1342,11 @@ QJsonObject TimestampElement::toJson() const
     return base;
 }
 
+std::string_view TimestampElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 // TWITCH MODERATION
 TwitchModerationElement::TwitchModerationElement()
     : MessageElement(MessageElementFlag::ModeratorTools)
@@ -1198,12 +1358,14 @@ void TwitchModerationElement::addToContainer(MessageLayoutContainer &container,
 {
     if (ctx.flags.has(MessageElementFlag::ModeratorTools))
     {
-        QSize size(int(container.getScale() * 16),
-                   int(container.getScale() * 16));
+        QSizeF size{
+            container.getScale() * 16,
+            container.getScale() * 16,
+        };
         auto actions = getSettings()->moderationActions.readOnly();
         for (const auto &action : *actions)
         {
-            if (auto image = action.getImage())
+            if (const auto &image = action.getImage())
             {
                 container.addElement(
                     (new ImageLayoutElement(*this, *image, size))
@@ -1250,6 +1412,11 @@ QJsonObject TwitchModerationElement::toJson() const
     return base;
 }
 
+std::string_view TwitchModerationElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 LinebreakElement::LinebreakElement(MessageElementFlags flags)
     : MessageElement(flags)
 {
@@ -1279,6 +1446,11 @@ QJsonObject LinebreakElement::toJson() const
     return base;
 }
 
+std::string_view LinebreakElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 ScalingImageElement::ScalingImageElement(ImageSet images,
                                          MessageElementFlags flags)
     : MessageElement(flags)
@@ -1298,10 +1470,8 @@ void ScalingImageElement::addToContainer(MessageLayoutContainer &container,
             return;
         }
 
-        auto size = QSize(image->width() * container.getScale(),
-                          image->height() * container.getScale());
-
-        container.addElement(new ImageLayoutElement(*this, image, size));
+        container.addElement(new ImageLayoutElement(
+            *this, image, image->size() * container.getScale()));
     }
 }
 
@@ -1322,6 +1492,11 @@ QJsonObject ScalingImageElement::toJson() const
     return base;
 }
 
+std::string_view ScalingImageElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
 ReplyCurveElement::ReplyCurveElement()
     : MessageElement(MessageElementFlag::RepliedMessage)
 {
@@ -1330,7 +1505,7 @@ ReplyCurveElement::ReplyCurveElement()
 void ReplyCurveElement::addToContainer(MessageLayoutContainer &container,
                                        const MessageLayoutContext &ctx)
 {
-    static const int width = 18;         // Overall width
+    static const qreal width = 18;       // Overall width
     static const float thickness = 1.5;  // Pen width
     static const int radius = 6;         // Radius of the top left corner
     static const int margin = 2;         // Top/Left/Bottom margin
@@ -1357,6 +1532,11 @@ QJsonObject ReplyCurveElement::toJson() const
     base["type"_L1] = u"ReplyCurveElement"_s;
 
     return base;
+}
+
+std::string_view ReplyCurveElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
 }
 
 }  // namespace chatterino

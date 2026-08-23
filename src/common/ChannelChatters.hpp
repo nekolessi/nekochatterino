@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/ChatterSet.hpp"
@@ -22,9 +26,9 @@ public:
     SharedAccessGuard<const ChatterSet> accessChatters() const;
 
     void addRecentChatter(const QString &user);
-    void addJoinedUser(const QString &user);
-    void addPartedUser(const QString &user);
-    const QColor getUserColor(const QString &user);
+    void addJoinedUser(const QString &user, bool isMod, bool isBroadcaster);
+    void addPartedUser(const QString &user, bool isMod, bool isBroadcaster);
+    QColor getUserColor(const QString &user) const;
     void setUserColor(const QString &user, const QColor &color);
     void updateOnlineChatters(const std::unordered_set<QString> &usernames);
 

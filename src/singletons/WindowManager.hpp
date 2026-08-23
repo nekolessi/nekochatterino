@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/FlagsEnum.hpp"
@@ -5,6 +9,7 @@
 #include "widgets/splits/SplitContainer.hpp"
 
 #include <pajlada/settings/settinglistener.hpp>
+#include <QObject>
 #include <QPoint>
 #include <QTimer>
 
@@ -14,6 +19,7 @@
 namespace chatterino {
 
 class Settings;
+class Args;
 class Paths;
 class Window;
 class ChannelView;
@@ -35,15 +41,18 @@ enum class WindowType;
 enum class SettingsDialogPreference;
 class FramelessEmbedWindow;
 
-class WindowManager final
+class WindowManager final : public QObject
 {
+    Q_OBJECT
+
     Theme &themes;
+    const Args &appArgs;
 
 public:
     static const QString WINDOW_LAYOUT_FILENAME;
 
-    explicit WindowManager(const Paths &paths, Settings &settings,
-                           Theme &themes_, Fonts &fonts);
+    explicit WindowManager(const Args &appArgs_, const Paths &paths,
+                           Settings &settings, Theme &themes_, Fonts &fonts);
     ~WindowManager();
 
     WindowManager(const WindowManager &) = delete;

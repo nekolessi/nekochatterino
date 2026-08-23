@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "util/StreamLink.hpp"
 
 #include "Application.hpp"
@@ -5,8 +9,8 @@
 #include "common/Version.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/WindowManager.hpp"
-#include "util/Helpers.hpp"
 #include "widgets/dialogs/QualityPopup.hpp"
+#include "widgets/Notebook.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/Window.hpp"
 

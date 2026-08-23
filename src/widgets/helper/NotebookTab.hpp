@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2016 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Common.hpp"
-#include "widgets/helper/Button.hpp"
+#include "widgets/buttons/Button.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/Notebook.hpp"
 
@@ -82,7 +86,7 @@ public:
     void moveAnimated(QPoint targetPos, bool animated = true);
 
     QRect getDesiredRect() const;
-    void hideTabXChanged();
+    void tabSizeChanged();
 
     void growWidth(int width);
     int normalTabWidth() const;
@@ -91,6 +95,9 @@ protected:
     void themeChangedEvent() override;
 
     void paintEvent(QPaintEvent *) override;
+    void paintContent(QPainter &painter) override
+    {
+    }
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -103,6 +110,7 @@ protected:
     void leaveEvent(QEvent *) override;
 
     void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
     void mouseMoveEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
@@ -131,6 +139,8 @@ private:
     void removeHighlightSource(const ChannelView::ChannelViewID &source);
     void updateHighlightStateDueSourcesChange();
 
+    void recreateCloseMultipleTabsMenu(NotebookTabLocation tabLocation);
+
     QPropertyAnimation positionChangedAnimation_;
     QPoint positionAnimationDesiredPoint_;
 
@@ -158,6 +168,9 @@ private:
     int growWidth_ = 0;
 
     QMenu menu_;
+    QMenu *closeMultipleTabsMenu_{};
+    QAction *closeTabsBeforeSelectedAction_{};
+    QAction *closeTabsAfterSelectedAction_{};
 
     pajlada::Signals::SignalHolder managedConnections_;
 };

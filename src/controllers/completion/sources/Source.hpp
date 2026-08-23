@@ -1,13 +1,14 @@
-#pragma once
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
 
-#include "widgets/listview/GenericListModel.hpp"
-#include "widgets/splits/InputCompletionItem.hpp"
+#pragma once
 
 #include <QStringList>
 
-#include <memory>
-#include <utility>
-#include <vector>
+namespace chatterino {
+class GenericListModel;
+}  // namespace chatterino
 
 namespace chatterino::completion {
 

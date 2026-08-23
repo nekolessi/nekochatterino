@@ -1,32 +1,27 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Aliases.hpp"
 #include "common/Outcome.hpp"
 #include "messages/MessageColor.hpp"
 #include "messages/MessageFlag.hpp"
-#include "providers/twitch/pubsubmessages/LowTrustUsers.hpp"
 
 #include <IrcMessage>
 #include <QRegularExpression>
 #include <QString>
 #include <QTime>
+#include <QUrl>
 #include <QVariant>
 
 #include <ctime>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 
 namespace chatterino {
 
-struct BanAction;
-struct UnbanAction;
-struct WarnAction;
-struct RaidAction;
-struct UnraidAction;
-struct AutomodAction;
-struct AutomodUserAction;
-struct AutomodInfoAction;
 struct Message;
 using MessagePtr = std::shared_ptr<const Message>;
 using MessagePtrMut = std::shared_ptr<Message>;
@@ -43,11 +38,10 @@ class IgnorePhrase;
 struct HelixVip;
 using HelixModerator = HelixVip;
 struct ChannelPointReward;
-struct DeleteAction;
 struct TwitchEmoteOccurrence;
 
 namespace linkparser {
-    struct Parsed;
+struct Parsed;
 }  // namespace linkparser
 
 struct SystemMessageTag {
@@ -113,13 +107,6 @@ public:
     MessageBuilder(TimeoutMessageTag, const QString &username,
                    const QString &durationInSeconds, bool multipleTimes,
                    const QDateTime &time);
-    MessageBuilder(const BanAction &action, const QDateTime &time,
-                   uint32_t count = 1);
-    MessageBuilder(const UnbanAction &action, const QDateTime &time);
-    MessageBuilder(const WarnAction &action);
-    MessageBuilder(const RaidAction &action);
-    MessageBuilder(const UnraidAction &action);
-    MessageBuilder(const AutomodUserAction &action);
 
     MessageBuilder(LiveUpdatesAddEmoteMessageTag, const QString &platform,
                    const QString &actor,
@@ -156,12 +143,12 @@ public:
     std::weak_ptr<const Message> weakOf();
 
     void append(std::unique_ptr<MessageElement> element);
-    void addLink(const linkparser::Parsed &parsedLink, const QString &source);
+    void addLink(const linkparser::Parsed &parsedLink, QStringView source);
 
     template <typename T, typename... Args>
     T *emplace(Args &&...args)
     {
-        static_assert(std::is_base_of<MessageElement, T>::value,
+        static_assert(std::is_base_of_v<MessageElement, T>,
                       "T must extend MessageElement");
 
         auto unique = std::make_unique<T>(std::forward<Args>(args)...);
@@ -192,6 +179,7 @@ public:
     /// Make a "CHANNEL_NAME has gone live!" message
     static MessagePtr makeLiveMessage(const QString &channelName,
                                       const QString &channelID,
+                                      const QString &title,
                                       MessageFlags extraFlags = {});
 
     // Messages in normal chat for channel stuff
@@ -201,7 +189,6 @@ public:
                                                bool hostOn);
     static MessagePtr makeDeletionMessageFromIRC(
         const MessagePtr &originalMessage);
-    static MessagePtr makeDeletionMessageFromPubSub(const DeleteAction &action);
     static MessagePtr makeListOfUsersMessage(QString prefix, QStringList users,
                                              Channel *channel,
                                              MessageFlags extraFlags = {});
@@ -210,16 +197,6 @@ public:
         Channel *channel, MessageFlags extraFlags = {});
 
     static MessagePtr buildHypeChatMessage(Communi::IrcPrivateMessage *message);
-
-    static std::pair<MessagePtr, MessagePtr> makeAutomodMessage(
-        const AutomodAction &action, const QString &channelName);
-    static MessagePtr makeAutomodInfoMessage(const AutomodInfoAction &action);
-
-    static std::pair<MessagePtr, MessagePtr> makeLowTrustUserMessage(
-        const PubSubLowTrustUsersMessage &action, const QString &channelName,
-        const TwitchChannel *twitchChannel);
-    static MessagePtr makeLowTrustUpdateMessage(
-        const PubSubLowTrustUsersMessage &action);
 
     /// @brief Builds a message out of an `ircMessage`.
     ///
@@ -268,7 +245,10 @@ public:
 
     static MessagePtrMut makeSubgiftMessage(const QString &text,
                                             const QVariantMap &tags,
-                                            const QTime &time);
+                                            const QTime &time,
+                                            TwitchChannel *channel);
+
+    static MessagePtrMut makeMissingScopesMessage(const QString &missingScopes);
 
     /// "Chat has been cleared by a moderator." or "{actor} cleared the chat."
     /// @param actor The user who cleared the chat (empty if unknown)
@@ -342,6 +322,7 @@ private:
                             TwitchChannel *twitchChannel);
     void appendChatterinoBadges(const QString &userID);
     void appendFfzBadges(TwitchChannel *twitchChannel, const QString &userID);
+    void appendBttvBadges(const QString &userID);
     void appendSeventvBadges(const QString &userID);
     void appendHomiesBadges(const QString &userID);
 

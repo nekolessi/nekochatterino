@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/dialogs/EditHotkeyDialog.hpp"
 
 #include "Application.hpp"
@@ -8,15 +12,29 @@
 #include "controllers/hotkeys/HotkeyHelpers.hpp"
 #include "ui_EditHotkeyDialog.h"
 
+#include <QSignalBlocker>
+
 namespace chatterino {
 
 EditHotkeyDialog::EditHotkeyDialog(const std::shared_ptr<Hotkey> hotkey,
-                                   bool isAdd, QWidget *parent)
+                                   QWidget *parent)
     : QDialog(parent, Qt::WindowStaysOnTopHint)
     , ui_(new Ui::EditHotkeyDialog)
     , data_(hotkey)
 {
     this->ui_->setupUi(this);
+    // normalize Key_Enter (numpad) to Key_Return so both Enter keys display and behave identically
+    QObject::connect(
+        this->ui_->keyComboEdit, &QKeySequenceEdit::keySequenceChanged, this,
+        [this](const QKeySequence &keySequence) {
+            auto normalized = normalizeKeySequence(keySequence);
+            if (normalized != keySequence)
+            {
+                // Block signals to prevent infinite loop
+                QSignalBlocker blocker(this->ui_->keyComboEdit);
+                this->ui_->keyComboEdit->setKeySequence(normalized);
+            }
+        });
     this->setStyleSheet(R"(QToolTip {
     padding: 2px;
     background-color: #333333;
@@ -197,12 +215,11 @@ void EditHotkeyDialog::afterEdit()
     }
 
     auto firstKeyInt = this->ui_->keyComboEdit->keySequence()[0];
-    bool hasModifier = ((firstKeyInt & Qt::CTRL) == Qt::CTRL) ||
-                       ((firstKeyInt & Qt::ALT) == Qt::ALT) ||
-                       ((firstKeyInt & Qt::META) == Qt::META);
-    bool isKeyExcempt = ((firstKeyInt & Qt::Key_Escape) == Qt::Key_Escape) ||
-                        ((firstKeyInt & Qt::Key_Enter) == Qt::Key_Enter) ||
-                        ((firstKeyInt & Qt::Key_Return) == Qt::Key_Return);
+    bool hasModifier = firstKeyInt.keyboardModifiers().testAnyFlags(
+        Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier);
+    bool isKeyExcempt = firstKeyInt.key() == Qt::Key_Escape ||
+                        firstKeyInt.key() == Qt::Key_Enter ||
+                        firstKeyInt.key() == Qt::Key_Return;
 
     if (!isKeyExcempt && !hasModifier && !this->shownSingleKeyWarning)
     {

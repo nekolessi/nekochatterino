@@ -48,8 +48,13 @@ add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 # Generate source groups for use in IDEs
 # source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${SOURCE_FILES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
-
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/../include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../lib/date/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../lib/fmt/include"
+)
 
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
@@ -62,6 +67,7 @@ target_link_libraries(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     $<$<BOOL:${MSVC}>:BOOST_JSON_NO_LIB>
     $<$<BOOL:${MSVC}>:BOOST_CONTAINER_NO_LIB>
+    QT_NO_KEYWORDS
 )
 
 if (MSVC)

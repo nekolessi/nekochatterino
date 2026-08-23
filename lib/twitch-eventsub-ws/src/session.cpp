@@ -14,12 +14,26 @@
 #include <boost/container_hash/hash.hpp>
 #include <boost/json.hpp>
 
-#include <array>
 #include <chrono>
-#include <iostream>
 #include <memory>
-#include <sstream>
 #include <unordered_map>
+
+#if __cpp_lib_format >= 201907L && !defined(__APPLE__)
+#    include <format>
+#else
+#    define FMT_HEADER_ONLY
+#    include "fmt/format.h"
+#endif
+
+namespace c2fmt {
+
+#if __cpp_lib_format >= 201907L && !defined(__APPLE__)
+using std::format;
+#else
+using fmt::format;
+#endif
+
+}  // namespace c2fmt
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -37,327 +51,205 @@ using NotificationHandlers = std::unordered_map<
                                             std::unique_ptr<Listener> &)>,
     boost::hash<EventSubSubscription>>;
 
-using MessageHandlers = std::unordered_map<
-    std::string,
-    std::function<boost::system::error_code(
-        const messages::Metadata &, const boost::json::value &,
-        std::unique_ptr<Listener> &, const NotificationHandlers &)>>;
-
 namespace {
 
-    template <class T>
-    boost::system::result<T> parsePayload(const boost::json::value &jv)
+template <class T>
+boost::system::result<T> parsePayload(const boost::json::value &jv)
+{
+    auto result = boost::json::try_value_to<T>(jv);
+    if (!result.has_value())
     {
-        auto result = boost::json::try_value_to<T>(jv);
-        if (!result.has_value())
-        {
-            return result.error();
-        }
-
-        return std::move(result.value());
+        return result.error();
     }
 
-    // Subscription types
-    const NotificationHandlers NOTIFICATION_HANDLERS{
-        {
-            {"channel.ban", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::channel_ban::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelBan(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"stream.online", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::stream_online::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onStreamOnline(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"stream.offline", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::stream_offline::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onStreamOffline(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.chat.notification", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload = parsePayload<
-                    payload::channel_chat_notification::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelChatNotification(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.update", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::channel_update::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelUpdate(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.chat.message", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::channel_chat_message::v1::Payload>(
-                        jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelChatMessage(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.moderate", "2"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::channel_moderate::v2::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelModerate(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"automod.message.hold", "2"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::automod_message_hold::v2::Payload>(
-                        jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onAutomodMessageHold(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"automod.message.update", "2"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload =
-                    parsePayload<payload::automod_message_update::v2::Payload>(
-                        jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onAutomodMessageUpdate(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.suspicious_user.message", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload = parsePayload<
-                    payload::channel_suspicious_user_message::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelSuspiciousUserMessage(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.suspicious_user.update", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload = parsePayload<
-                    payload::channel_suspicious_user_update::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelSuspiciousUserUpdate(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.chat.user_message_hold", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload = parsePayload<
-                    payload::channel_chat_user_message_hold::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelChatUserMessageHold(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        {
-            {"channel.chat.user_message_update", "1"},
-            [](const auto &metadata, const auto &jv, auto &listener) {
-                auto oPayload = parsePayload<
-                    payload::channel_chat_user_message_update::v1::Payload>(jv);
-                if (!oPayload)
-                {
-                    return oPayload.error();
-                }
-                listener->onChannelChatUserMessageUpdate(metadata, *oPayload);
-                return boost::system::error_code{};
-            },
-        },
-        // Add your new subscription types above this line
-    };
+    return std::move(result.value());
+}
 
-    const MessageHandlers MESSAGE_HANDLERS{
-        {
-            "session_welcome",
-            [](const auto &metadata, const auto &jv, auto &listener,
-               const auto & /*notificationHandlers*/) {
-                auto oPayload =
-                    parsePayload<payload::session_welcome::Payload>(jv);
-                if (!oPayload)
-                {
-                    // TODO: error handling
-                    return oPayload.error();
-                }
-                const auto &payload = *oPayload;
-
-                listener->onSessionWelcome(metadata, payload);
-                return boost::system::error_code{};
-            },
+// Subscription types
+const NotificationHandlers NOTIFICATION_HANDLERS{
+    {
+        {"channel.ban", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload = parsePayload<payload::channel_ban::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelBan(metadata, *oPayload);
+            return boost::system::error_code{};
         },
-        {
-            "session_keepalive",
-            [](const auto &metadata, const auto &jv, auto &listener,
-               const auto &notificationHandlers) {
-                // TODO: should we do something here?
-                return boost::system::error_code{};
-            },
+    },
+    {
+        {"stream.online", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::stream_online::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onStreamOnline(metadata, *oPayload);
+            return boost::system::error_code{};
         },
-        {"session_reconnect",
-         [](const auto & /*metadata*/, const auto &jv, auto &listener,
-            const auto & /*notificationHandlers*/) {
-             auto oPayload =
-                 parsePayload<payload::session_welcome::Payload>(jv);
-             if (!oPayload)
-             {
-                 return oPayload.error();
-             }
-             const auto &payload = *oPayload;
-             auto *listenerPtr = listener.get();
-
-             listenerPtr->onClose(std::move(listener), payload.reconnectURL);
-             return boost::system::error_code{};
-         }},
-        {
-            "notification",
-            [](const auto &metadata, const auto &jv, auto &listener,
-               const auto &notificationHandlers) {
-                listener->onNotification(metadata, jv);
-
-                if (!metadata.subscriptionType || !metadata.subscriptionVersion)
-                {
-                    // TODO: error handling
-                    return boost::system::error_code{};
-                }
-
-                auto it =
-                    notificationHandlers.find({*metadata.subscriptionType,
-                                               *metadata.subscriptionVersion});
-                if (it == notificationHandlers.end())
-                {
-                    EVENTSUB_BAIL_HERE(error::Kind::NoMessageHandler);
-                }
-
-                return it->second(metadata, jv, listener);
-            },
+    },
+    {
+        {"stream.offline", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::stream_offline::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onStreamOffline(metadata, *oPayload);
+            return boost::system::error_code{};
         },
-    };
+    },
+    {
+        {"channel.chat.notification", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::channel_chat_notification::v1::Payload>(
+                    jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelChatNotification(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.update", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::channel_update::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelUpdate(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.chat.message", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::channel_chat_message::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelChatMessage(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.moderate", "2"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::channel_moderate::v2::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelModerate(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"automod.message.hold", "2"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::automod_message_hold::v2::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onAutomodMessageHold(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"automod.message.update", "2"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload =
+                parsePayload<payload::automod_message_update::v2::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onAutomodMessageUpdate(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.suspicious_user.message", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload = parsePayload<
+                payload::channel_suspicious_user_message::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelSuspiciousUserMessage(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.suspicious_user.update", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload = parsePayload<
+                payload::channel_suspicious_user_update::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelSuspiciousUserUpdate(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.chat.user_message_hold", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload = parsePayload<
+                payload::channel_chat_user_message_hold::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelChatUserMessageHold(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    {
+        {"channel.chat.user_message_update", "1"},
+        [](const auto &metadata, const auto &jv, auto &listener) {
+            auto oPayload = parsePayload<
+                payload::channel_chat_user_message_update::v1::Payload>(jv);
+            if (!oPayload)
+            {
+                return oPayload.error();
+            }
+            listener->onChannelChatUserMessageUpdate(metadata, *oPayload);
+            return boost::system::error_code{};
+        },
+    },
+    // Add your new subscription types above this line
+};
 
 }  // namespace
 
-boost::system::error_code handleMessage(std::unique_ptr<Listener> &listener,
-                                        const beast::flat_buffer &buffer)
-{
-    boost::system::error_code parseError;
-    auto jv =
-        boost::json::parse(beast::buffers_to_string(buffer.data()), parseError);
-    if (parseError)
-    {
-        // TODO: wrap error?
-        return parseError;
-    }
-
-    const auto *jvObject = jv.if_object();
-    if (jvObject == nullptr)
-    {
-        EVENTSUB_BAIL_HERE(error::Kind::ExpectedObject);
-    }
-
-    const auto *metadataV = jvObject->if_contains("metadata");
-    if (metadataV == nullptr)
-    {
-        EVENTSUB_BAIL_HERE(error::Kind::FieldMissing);
-    }
-    auto metadataResult =
-        boost::json::try_value_to<messages::Metadata>(*metadataV);
-    if (metadataResult.has_error())
-    {
-        // TODO: wrap error?
-        return metadataResult.error();
-    }
-
-    const auto &metadata = metadataResult.value();
-
-    auto handler = MESSAGE_HANDLERS.find(metadata.messageType);
-
-    if (handler == MESSAGE_HANDLERS.end())
-    {
-        EVENTSUB_BAIL_HERE(error::Kind::NoMessageHandler);
-    }
-
-    const auto *payloadV = jvObject->if_contains("payload");
-    if (payloadV == nullptr)
-    {
-        EVENTSUB_BAIL_HERE(error::Kind::FieldMissing);
-    }
-
-    return handler->second(metadata, *payloadV, listener,
-                           NOTIFICATION_HANDLERS);
-}
-
 // Resolver and socket require an io_context
 Session::Session(boost::asio::io_context &ioc, boost::asio::ssl::context &ctx,
-                 std::unique_ptr<Listener> listener)
-    : resolver(boost::asio::make_strand(ioc))
+                 std::unique_ptr<Listener> listener,
+                 std::shared_ptr<Logger> log_)
+    : log(std::move(log_))
+    , resolver(boost::asio::make_strand(ioc))
     , ws(boost::asio::make_strand(ioc), ctx)
     , listener(std::move(listener))
+    , closeTimeout(this->ws.get_executor())
 {
 }
 
@@ -381,10 +273,30 @@ void Session::close()
 {
     boost::beast::websocket::close_reason closeReason("Shutting down");
 
+    // cancel all pending operations
+    this->keepaliveTimer.reset();
+    this->resolver.cancel();
+    beast::get_lowest_layer(this->ws).cancel();
+
+    // set a timeout on the async_close() call
+    this->closeTimeout.expires_after(std::chrono::milliseconds(200));
+    this->closeTimeout.async_wait(
+        [self = this->shared_from_this()](boost::system::error_code ec) {
+            if (ec == boost::asio::error::operation_aborted)
+            {
+                return;  // we're aborted by onClose()
+            }
+
+            self->log->warn("Close timed out.");
+            self->closeSignal.emit(boost::asio::cancellation_type::total);
+        });
+
     // TODO: Test this with a misbehaving eventsub server that doesn't respond to our close
     this->ws.async_close(
         closeReason,
-        beast::bind_front_handler(&Session::onClose, shared_from_this()));
+        boost::asio::bind_cancellation_slot(
+            this->closeSignal.slot(),
+            beast::bind_front_handler(&Session::onClose, shared_from_this())));
 }
 
 Listener *Session::getListener()
@@ -392,8 +304,9 @@ Listener *Session::getListener()
     return this->listener.get();
 }
 
-void Session::onResolve(beast::error_code ec,
-                        boost::asio::ip::tcp::resolver::results_type results)
+void Session::onResolve(
+    beast::error_code ec,
+    const boost::asio::ip::tcp::resolver::results_type &results)
 {
     if (ec)
     {
@@ -412,7 +325,7 @@ void Session::onResolve(beast::error_code ec,
 
 void Session::onConnect(
     beast::error_code ec,
-    boost::asio::ip::tcp::resolver::results_type::endpoint_type ep)
+    const boost::asio::ip::tcp::resolver::results_type::endpoint_type &ep)
 {
     if (ec)
     {
@@ -489,7 +402,7 @@ void Session::onRead(beast::error_code ec, std::size_t bytes_transferred)
 {
     boost::ignore_unused(bytes_transferred);
 
-    if (!this->listener)
+    if (!this->listener || ec == boost::asio::error::operation_aborted)
     {
         return;
     }
@@ -500,7 +413,8 @@ void Session::onRead(beast::error_code ec, std::size_t bytes_transferred)
         return;
     }
 
-    auto messageError = handleMessage(this->listener, this->buffer);
+    this->receivedMessage = true;
+    auto messageError = this->handleMessage(this->buffer);
     if (messageError)
     {
         this->fail(messageError, "handleMessage");
@@ -525,7 +439,7 @@ void Session::onRead(beast::error_code ec, std::size_t bytes_transferred)
         */
 void Session::onClose(beast::error_code ec)
 {
-    if (ec)
+    if (ec && ec != boost::asio::error::operation_aborted)
     {
         this->fail(ec, "close");
         return;
@@ -534,17 +448,184 @@ void Session::onClose(beast::error_code ec)
     // If we get here then the connection is closed gracefully
     if (this->listener)
     {
+        this->closeTimeout.cancel();
         this->listener->onClose(std::move(this->listener), {});
     }
 }
 
 void Session::fail(beast::error_code ec, std::string_view op)
 {
-    std::cerr << op << ": " << ec.message() << " (" << ec.location() << ")\n";
+    this->log->warn(c2fmt::format("{}: {} ({})", op, ec.message(),
+                                  ec.location().to_string()));
     if (!this->ws.is_open() && this->listener)
     {
+        if (this->keepaliveTimer)
+        {
+            this->keepaliveTimer.reset();
+        }
+        this->closeTimeout.cancel();
+
         this->listener->onClose(std::move(this->listener), {});
     }
+}
+
+boost::system::error_code Session::handleMessage(
+    const beast::flat_buffer &buffer)
+{
+    boost::system::error_code parseError;
+    auto jv =
+        boost::json::parse(beast::buffers_to_string(buffer.data()), parseError);
+    if (parseError)
+    {
+        // TODO: wrap error?
+        return parseError;
+    }
+
+    const auto *jvObject = jv.if_object();
+    if (jvObject == nullptr)
+    {
+        EVENTSUB_BAIL_HERE(error::Kind::ExpectedObject);
+    }
+
+    const auto *metadataV = jvObject->if_contains("metadata");
+    if (metadataV == nullptr)
+    {
+        EVENTSUB_BAIL_HERE(error::Kind::FieldMissing);
+    }
+    auto metadataResult =
+        boost::json::try_value_to<messages::Metadata>(*metadataV);
+    if (metadataResult.has_error())
+    {
+        // TODO: wrap error?
+        return metadataResult.error();
+    }
+
+    const auto &metadata = metadataResult.value();
+
+    const auto *payloadV = jvObject->if_contains("payload");
+    if (payloadV == nullptr)
+    {
+        EVENTSUB_BAIL_HERE(error::Kind::FieldMissing);
+    }
+
+    if (metadata.messageType == "notification")
+    {
+        return this->onNotification(metadata, *payloadV);
+    }
+    if (metadata.messageType == "session_welcome")
+    {
+        return this->onSessionWelcome(metadata, *payloadV);
+    }
+    if (metadata.messageType == "session_keepalive")
+    {
+        return {};  // nothing to do
+    }
+    if (metadata.messageType == "session_reconnect")
+    {
+        return this->onSessionReconnect(*payloadV);
+    }
+    EVENTSUB_BAIL_HERE(error::Kind::NoMessageHandler);
+}
+
+boost::system::error_code Session::onSessionWelcome(
+    const messages::Metadata &metadata, const boost::json::value &jv)
+{
+    auto oPayload = parsePayload<payload::session_welcome::Payload>(jv);
+    if (!oPayload)
+    {
+        // TODO: error handling
+        return oPayload.error();
+    }
+    const auto &payload = *oPayload;
+
+    listener->onSessionWelcome(metadata, payload);
+
+    // we're graceful with the keepalive timeout
+    this->keepaliveTimeout =
+        std::chrono::seconds{payload.keepaliveTimeoutSeconds.value_or(60)} * 2;
+    assert(!this->keepaliveTimer);
+    this->log->debug(
+        c2fmt::format("Keepalive: {}s", this->keepaliveTimeout.count()));
+    this->checkKeepalive();
+
+    return {};
+}
+
+boost::system::error_code Session::onSessionReconnect(
+    const boost::json::value &jv)
+{
+    auto oPayload = parsePayload<payload::session_welcome::Payload>(jv);
+    if (!oPayload)
+    {
+        return oPayload.error();
+    }
+    const auto &payload = *oPayload;
+    auto *listenerPtr = listener.get();
+
+    listenerPtr->onClose(std::move(listener), payload.reconnectURL);
+    return {};
+}
+
+boost::system::error_code Session::onNotification(
+    const messages::Metadata &metadata, const boost::json::value &jv)
+{
+    listener->onNotification(metadata, jv);
+
+    if (!metadata.subscriptionType || !metadata.subscriptionVersion)
+    {
+        // TODO: error handling
+        return boost::system::error_code{};
+    }
+
+    auto it = NOTIFICATION_HANDLERS.find(
+        {*metadata.subscriptionType, *metadata.subscriptionVersion});
+    if (it == NOTIFICATION_HANDLERS.end())
+    {
+        EVENTSUB_BAIL_HERE(error::Kind::NoMessageHandler);
+    }
+
+    return it->second(metadata, jv, listener);
+}
+
+void Session::checkKeepalive()
+{
+    if (!this->receivedMessage)
+    {
+        this->log->debug("Keepalive timeout, closing");
+        if (this->listener)
+        {
+            this->listener->onClose(std::move(this->listener), {});
+        }
+        this->close();
+        return;
+    }
+    this->receivedMessage = false;
+
+    if (this->keepaliveTimeout.count() == 0)
+    {
+        return;
+    }
+
+    this->keepaliveTimer =
+        std::make_unique<boost::asio::system_timer>(this->ws.get_executor());
+    this->keepaliveTimer->expires_after(this->keepaliveTimeout);
+    this->keepaliveTimer->async_wait(
+        [weak{this->weak_from_this()}](boost::system::error_code ec) {
+            auto strong = weak.lock();
+            if (!strong || ec == boost::asio::error::operation_aborted)
+            {
+                // Session was destroyed
+                return;
+            }
+
+            if (ec)
+            {
+                strong->log->warn(c2fmt::format("Keepalive timer cancelled: {}",
+                                                ec.message()));
+                return;
+            }
+            strong->checkKeepalive();
+        });
 }
 
 }  // namespace chatterino::eventsub::lib

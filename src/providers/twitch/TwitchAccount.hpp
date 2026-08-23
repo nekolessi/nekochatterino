@@ -1,5 +1,10 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
+#include "common/Aliases.hpp"
 #include "common/Atomic.hpp"
 #include "common/UniqueAccess.hpp"
 #include "controllers/accounts/Account.hpp"
@@ -7,18 +12,18 @@
 #include "providers/twitch/TwitchEmotes.hpp"
 #include "providers/twitch/TwitchUser.hpp"
 #include "util/CancellationToken.hpp"
-#include "util/QStringHash.hpp"
+#include "util/ExponentialBackoff.hpp"
 
-#include <boost/unordered/unordered_flat_map_fwd.hpp>
 #include <pajlada/signals.hpp>
 #include <QColor>
 #include <QElapsedTimer>
 #include <QObject>
 #include <QString>
-#include <rapidjson/document.h>
+#include <QtContainerFwd>
 
 #include <functional>
-#include <mutex>
+#include <memory>
+#include <optional>
 #include <unordered_set>
 
 namespace chatterino {
@@ -61,24 +66,29 @@ public:
     // Returns true if the value has changed, otherwise false
     bool setOAuthToken(const QString &newOAuthToken);
 
+    // Attempts to update the users username
+    // Returns true if the value has changed, otherwise false
+    bool setUserName(const QString &newUserName);
+
     bool isAnon() const;
 
     void loadBlocks();
-    void blockUser(const QString &userId, const QObject *caller,
-                   std::function<void()> onSuccess,
+    void blockUser(const QString &userId, const QString &userLogin,
+                   const QObject *caller, std::function<void()> onSuccess,
                    std::function<void()> onFailure);
-    void unblockUser(const QString &userId, const QObject *caller,
-                     std::function<void()> onSuccess,
+    void unblockUser(const QString &userId, const QString &userLogin,
+                     const QObject *caller, std::function<void()> onSuccess,
                      std::function<void()> onFailure);
 
-    void blockUserLocally(const QString &userID);
+    void blockUserLocally(const QString &userID, const QString &userLogin);
 
     [[nodiscard]] const std::unordered_set<TwitchUser> &blocks() const;
     [[nodiscard]] const std::unordered_set<QString> &blockedUserIds() const;
+    [[nodiscard]] const std::unordered_set<QString> &blockedUserLogins() const;
 
     // Automod actions
-    void autoModAllow(const QString msgID, ChannelPtr channel);
-    void autoModDeny(const QString msgID, ChannelPtr channel);
+    void autoModAllow(const QString &msgID, ChannelPtr channel) const;
+    void autoModDeny(const QString &msgID, ChannelPtr channel) const;
 
     void loadSeventvUserID();
 
@@ -118,14 +128,18 @@ private:
     QStringList userstateEmoteSets_;
 
     ScopedCancellationToken blockToken_;
+    ExponentialBackoff<5> blocksRetryBackoff_{std::chrono::seconds(5)};
     std::unordered_set<TwitchUser> ignores_;
     std::unordered_set<QString> ignoresUserIds_;
+    std::unordered_set<QString> ignoresUserLogins_;
 
     ScopedCancellationToken emoteToken_;
     UniqueAccess<std::shared_ptr<const TwitchEmoteSetMap>> emoteSets_;
     UniqueAccess<std::shared_ptr<const EmoteMap>> emotes_;
 
     QString seventvUserID_;
+
+    void tryLoadBlocks();
 };
 
 }  // namespace chatterino

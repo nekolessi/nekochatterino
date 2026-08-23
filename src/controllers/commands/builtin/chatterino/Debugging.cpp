@@ -1,29 +1,36 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "controllers/commands/builtin/chatterino/Debugging.hpp"
 
 #include "Application.hpp"
 #include "common/Channel.hpp"
 #include "common/Env.hpp"
-#include "common/Literals.hpp"
 #include "controllers/commands/CommandContext.hpp"
 #include "controllers/notifications/NotificationController.hpp"
+#include "controllers/spellcheck/SpellChecker.hpp"
 #include "messages/Image.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
-#include "providers/twitch/PubSubActions.hpp"
+#include "providers/twitch/eventsub/Controller.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
+#include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/Toasts.hpp"
+#include "singletons/Updates.hpp"
+#include "singletons/WindowManager.hpp"
 #include "util/PostToThread.hpp"
 
 #include <QApplication>
 #include <QLoggingCategory>
 #include <QString>
 
-namespace chatterino::commands {
+using namespace Qt::StringLiterals;
 
-using namespace literals;
+namespace chatterino::commands {
 
 QString setLoggingRules(const CommandContext &ctx)
 {
@@ -140,6 +147,30 @@ QString forceImageUnload(const CommandContext &ctx)
     return "";
 }
 
+QString forceLayoutChannelViews(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->forceLayoutChannelViews();
+    return {};
+}
+
+QString incrementImageGeneration(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->incGeneration();
+    return {};
+}
+
+QString invalidateBuffers(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->invalidateChannelViewBuffers();
+    return {};
+}
+
+QString eventsub(const CommandContext & /*ctx*/)
+{
+    getApp()->getEventSub()->debug();
+    return {};
+}
+
 QString debugTest(const CommandContext &ctx)
 {
     if (!ctx.channel)
@@ -149,27 +180,7 @@ QString debugTest(const CommandContext &ctx)
 
     const auto command = ctx.words.value(1);
 
-    if (command == "timeout-pubsub")
-    {
-        QJsonObject data;
-        data["created_by_user_id"] = ctx.twitchChannel->roomId();
-        data["created_by"] = ctx.twitchChannel->getName();
-
-        BanAction action(data, ctx.twitchChannel->roomId());
-
-        action.source.id = ctx.twitchChannel->roomId();
-        action.source.login = ctx.twitchChannel->getName();
-
-        action.target.id = "11148817";
-        action.target.login = "pajlada";
-        action.duration = 10;
-
-        MessageBuilder msg(action, QDateTime::currentDateTime());
-        msg->flags.set(MessageFlag::PubSub);
-        ctx.channel->addOrReplaceTimeout(msg.release(),
-                                         QDateTime::currentDateTime());
-    }
-    else if (command == "timeout-irc")
+    if (command == "timeout-irc")
     {
         auto nowMillis = QDateTime::currentDateTime().toSecsSinceEpoch();
 
@@ -190,6 +201,41 @@ QString debugTest(const CommandContext &ctx)
             ctx.twitchChannel->getName(), title);
         ctx.channel->addSystemMessage(
             QString("debug-test sent desktop notification"));
+    }
+    else if (command == "update-check")
+    {
+        getApp()->getUpdates().checkForUpdates();
+        ctx.channel->addSystemMessage(QString("checking for updates"));
+    }
+    else if (command == "save-settings")
+    {
+        ctx.channel->addSystemMessage(u"requesting settings save"_s);
+        auto res = getSettings()->requestSave();
+        switch (res)
+        {
+            case pajlada::Settings::SettingManager::SaveResult::Failed:
+                ctx.channel->addSystemMessage(u"setting save failed"_s);
+                break;
+            case pajlada::Settings::SettingManager::SaveResult::Success:
+                ctx.channel->addSystemMessage(u"setting save success"_s);
+                break;
+            case pajlada::Settings::SettingManager::SaveResult::Skipped:
+                ctx.channel->addSystemMessage(u"setting save skipped"_s);
+                break;
+        }
+    }
+    else if (command == "set-watching")
+    {
+        if (ctx.words.size() < 3)
+        {
+            ctx.channel->addSystemMessage("Missing name");
+            return {};
+        }
+        auto chan = getApp()->getTwitch()->getOrAddChannel(ctx.words.at(2));
+        if (chan != getApp()->getTwitch()->getWatchingChannel().get())
+        {
+            getApp()->getTwitch()->setWatchingChannel(chan);
+        }
     }
     else
     {

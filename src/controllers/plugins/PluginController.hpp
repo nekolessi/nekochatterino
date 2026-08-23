@@ -1,10 +1,16 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #ifdef CHATTERINO_HAVE_PLUGINS
 
+#    include "common/websockets/WebSocketPool.hpp"
 #    include "controllers/commands/CommandContext.hpp"
 #    include "controllers/plugins/Plugin.hpp"
 
+#    include <boost/signals2/signal.hpp>
 #    include <QDir>
 #    include <QFileInfo>
 #    include <QJsonArray>
@@ -12,16 +18,15 @@
 #    include <QString>
 #    include <sol/forward.hpp>
 
-#    include <algorithm>
 #    include <map>
 #    include <memory>
 #    include <utility>
-#    include <vector>
 
 struct lua_State;
 
 namespace chatterino {
 
+class Settings;
 class Paths;
 
 class PluginController
@@ -61,19 +66,28 @@ public:
         const QString &query, const QString &fullTextContent,
         int cursorPosition, bool isFirstWord) const;
 
+    WebSocketPool &webSocketPool();
+
+    boost::signals2::signal<void(Plugin *)> onPluginLoaded;
+
 private:
     void loadPlugins();
     void load(const QFileInfo &index, const QDir &pluginDir,
               const PluginMeta &meta);
 
     // This function adds lua standard libraries into the state
-    static void openLibrariesFor(Plugin *plugin);
+    void openLibrariesFor(Plugin *plugin);
 
-    static void initSol(sol::state_view &lua, Plugin *plugin);
+    void initSol(sol::state_view &lua, Plugin *plugin);
 
     static void loadChatterinoLib(lua_State *l);
     bool tryLoadFromDir(const QDir &pluginDir);
     std::map<QString, std::unique_ptr<Plugin>> plugins_;
+    WebSocketPool webSocketPool_;
+
+    std::vector<
+        std::pair<std::string, std::function<sol::object(sol::state_view)>>>
+        loaders_;
 
     // This is for tests, pay no attention
     friend class PluginControllerAccess;

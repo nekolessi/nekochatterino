@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "util/RapidjsonHelpers.hpp"
@@ -92,6 +96,7 @@ public:
     static QColor FALLBACK_SELF_MESSAGE_HIGHLIGHT_COLOR;
     static QColor FALLBACK_REDEEMED_HIGHLIGHT_COLOR;
     static QColor FALLBACK_SUB_COLOR;
+    static QColor FALLBACK_WATCH_STREAK_COLOR;
     static QColor FALLBACK_FIRST_MESSAGE_HIGHLIGHT_COLOR;
     static QColor FALLBACK_ELEVATED_MESSAGE_HIGHLIGHT_COLOR;
     static QColor FALLBACK_THREAD_HIGHLIGHT_COLOR;
@@ -117,12 +122,11 @@ private:
 namespace pajlada {
 
 namespace {
-    chatterino::HighlightPhrase constructError()
-    {
-    return chatterino::HighlightPhrase(
-            QString(), false, false, false, false, false, QString(), QColor(),
-            true, std::vector<std::string>(), std::vector<std::string>());
-    }
+chatterino::HighlightPhrase constructError()
+{
+    return chatterino::HighlightPhrase(QString(), false, false, false, false,
+                                       false, QString(), QColor());
+}
 }  // namespace
 
 template <>

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/twitch/IrcMessageHandler.hpp"
 
 #include "common/Literals.hpp"
@@ -11,11 +15,12 @@
 #include "mocks/BaseApplication.hpp"
 #include "mocks/ChatterinoBadges.hpp"
 #include "mocks/DisabledStreamerMode.hpp"
-#include "mocks/Emotes.hpp"
+#include "mocks/EmoteController.hpp"
 #include "mocks/LinkResolver.hpp"
 #include "mocks/Logging.hpp"
 #include "mocks/TwitchIrcServer.hpp"
 #include "mocks/UserData.hpp"
+#include "providers/bttv/BttvBadges.hpp"
 #include "providers/ffz/FfzBadges.hpp"
 #include "providers/seventv/SeventvBadges.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
@@ -25,7 +30,6 @@
 #include "providers/twitch/TwitchBadge.hpp"
 #include "providers/twitch/TwitchBadges.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
-#include "singletons/Emotes.hpp"
 #include "Test.hpp"
 #include "util/IrcHelpers.hpp"
 #include "util/VectorMessageSink.hpp"
@@ -39,6 +43,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QString>
+#include <QStringBuilder>
 
 #include <unordered_map>
 #include <vector>
@@ -73,7 +78,7 @@ public:
     {
     }
 
-    IEmotes *getEmotes() override
+    EmoteController *getEmotes() override
     {
         return &this->emotes;
     }
@@ -101,6 +106,11 @@ public:
     FfzBadges *getFfzBadges() override
     {
         return &this->ffzBadges;
+    }
+
+    BttvBadges *getBttvBadges() override
+    {
+        return &this->bttvBadges;
     }
 
     SeventvBadges *getSeventvBadges() override
@@ -155,11 +165,12 @@ public:
 
     mock::EmptyLogging logging;
     AccountController accounts;
-    mock::Emotes emotes;
+    mock::EmoteController emotes;
     mock::UserDataController userData;
     mock::MockTwitchIrcServer twitch;
     mock::ChatterinoBadges chatterinoBadges;
     FfzBadges ffzBadges;
+    BttvBadges bttvBadges;
     SeventvBadges seventvBadges;
     HighlightController highlights;
     SeventvPersonalEmotes personalEmotes;
@@ -476,14 +487,13 @@ public:
 
         this->mockApplication->getAccounts()
             ->twitch.getCurrent()
-            ->blockUserLocally(u"12345"_s);
+            ->blockUserLocally(u"12345"_s, u"blocked"_s);
 
-        auto makeBadge = [](QStringView platform) {
+        auto makeBadge = [](QStringView platform, QStringView name) {
             return std::make_shared<Emote>(Emote{
-                .name = {},
-                .images = {Url{u"https://chatterino.com/" % platform %
-                               u".png"}},
-                .tooltip = {platform % u" badge"},
+                .name = {platform.toString().toLower() % ':' % name},
+                .images = {Url{u"https://chatterino.com/" % name % u".png"}},
+                .tooltip = {name % u" badge"},
                 .homePage = {},
                 .zeroWidth = false,
                 .id = {},
@@ -494,17 +504,21 @@ public:
 
         // Chatterino
         this->mockApplication->chatterinoBadges.setBadge(
-            {u"123456"_s}, makeBadge(u"Chatterino"));
+            {u"123456"_s}, makeBadge(u"chatterino", u"Chatterino"));
 
-        // FFZ
+        // FrankerFaceZ
         this->mockApplication->ffzBadges.registerBadge(
-            1, {.emote = makeBadge(u"FFZ1"), .color = {9, 10, 11, 12}});
+            1, {.emote = makeBadge(u"frankerfacez", u"FFZ1"),
+                .color = {9, 10, 11, 12}});
         this->mockApplication->ffzBadges.registerBadge(
-            2, {.emote = makeBadge(u"FFZ2"), .color = {13, 14, 15, 16}});
+            2, {.emote = makeBadge(u"frankerfacez", u"FFZ2"),
+                .color = {13, 14, 15, 16}});
         this->mockApplication->ffzBadges.registerBadge(
-            3, {.emote = makeBadge(u"FFZ2"), .color = {17, 18, 19, 20}});
+            3, {.emote = makeBadge(u"frankerfacez", u"FFZ2"),
+                .color = {17, 18, 19, 20}});
         this->mockApplication->ffzBadges.registerBadge(
-            4, {.emote = makeBadge(u"FFZ2"), .color = {21, 22, 23, 24}});
+            4, {.emote = makeBadge(u"frankerfacez", u"FFZ2"),
+                .color = {21, 22, 23, 24}});
         this->mockApplication->getFfzBadges()->assignBadgeToUser({u"123456"_s},
                                                                  1);
         this->mockApplication->getFfzBadges()->assignBadgeToUser({u"123456"_s},
@@ -513,6 +527,7 @@ public:
         // 7TV
         this->mockApplication->getSeventvBadges()->registerBadge({
             {u"id"_s, u"1"_s},
+            {u"name"_s, u"7TV badge name"_s},
             {u"tooltip"_s, u"7TV badge"_s},
             {
                 u"host"_s,
@@ -531,6 +546,14 @@ public:
         });
         this->mockApplication->getSeventvBadges()->assignBadgeToUser(
             u"1"_s, {u"123456"_s});
+
+        // BetterTTV
+        this->mockApplication->getBttvBadges()->registerBadge({
+            {u"startedAt"_s, u"2017-01-11T09:54:10.000Z"_s},
+            {u"url"_s, u"https://chatterino.com/betterttv/test.png"_s},
+        });
+        this->mockApplication->getBttvBadges()->assignBadgeToUser(
+            u"https://chatterino.com/betterttv/test.png"_s, {u"123456"_s});
 
         // Twitch
         this->mockApplication->getTwitchBadges()->loadLocalBadges();
@@ -582,6 +605,17 @@ TEST_P(TestIrcMessageHandlerP, Run)
     auto channel = makeMockTwitchChannel(u"pajlada"_s, *snapshot);
 
     VectorMessageSink sink;
+
+    const auto &userData = snapshot->param("userData").toObject();
+    for (auto it = userData.begin(); it != userData.end(); ++it)
+    {
+        const auto &userID = it.key();
+        const auto &data = it.value().toObject();
+        if (auto color = data.value("color").toString(); !color.isEmpty())
+        {
+            this->mockApplication->getUserData()->setUserColor(userID, color);
+        }
+    }
 
     for (auto prevInput : snapshot->param("prevMessages").toArray())
     {

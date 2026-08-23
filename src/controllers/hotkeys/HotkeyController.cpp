@@ -1,12 +1,20 @@
+// SPDX-FileCopyrightText: 2021 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "controllers/hotkeys/HotkeyController.hpp"
 
 #include "common/QLogging.hpp"
 #include "controllers/hotkeys/Hotkey.hpp"
 #include "controllers/hotkeys/HotkeyCategory.hpp"
 #include "controllers/hotkeys/HotkeyModel.hpp"
-#include "singletons/Settings.hpp"
+#include "util/RapidJsonSerializeQString.hpp"  // IWYU pragma: keep
 
+#include <pajlada/settings.hpp>
+#include <QKeyCombination>
+#include <QMessageBox>
 #include <QShortcut>
+#include <QWidget>
 
 namespace {
 
@@ -131,14 +139,27 @@ std::vector<QShortcut *> HotkeyController::shortcutsForCategory(
         };
         auto qs = QKeySequence(hotkey->keySequence());
 
-        auto stringified = qs.toString(QKeySequence::NativeText);
-        if (stringified.contains("Return"))
-        {
-            stringified.replace("Return", "Enter");
-            auto copy = QKeySequence(stringified, QKeySequence::NativeText);
-            createShortcutFromKeySeq(copy);
-        }
+        // Create shortcut for the original key sequence
         createShortcutFromKeySeq(qs);
+
+        // Qt treats Key_Return (main keyboard) and Key_Enter (numpad) as different keys, but they are expect to behave identically.
+        // Create a duplicate shortcut with the alternate key.
+        for (int i = 0; i < qs.count(); i++)
+        {
+            auto combo = qs[i];
+            if (combo.key() == Qt::Key_Return)
+            {
+                QKeyCombination enterCombo(combo.keyboardModifiers(),
+                                           Qt::Key_Enter);
+                createShortcutFromKeySeq(QKeySequence(enterCombo));
+            }
+            else if (combo.key() == Qt::Key_Enter)
+            {
+                QKeyCombination returnCombo(combo.keyboardModifiers(),
+                                            Qt::Key_Return);
+                createShortcutFromKeySeq(QKeySequence(returnCombo));
+            }
+        }
     }
     return output;
 }
@@ -233,7 +254,8 @@ void HotkeyController::loadHotkeys()
     auto numCombinedDefaults = set.size();
 
     pajlada::Settings::Setting<std::vector<QString>>::set(
-        "/hotkeys/addedDefaults", std::vector<QString>(set.begin(), set.end()));
+        "/hotkeys/addedDefaults", std::vector<QString>(set.begin(), set.end()),
+        pajlada::Settings::SettingOption::CompareBeforeSet);
 
     qCDebug(chatterinoHotkeys) << "Loading hotkeys...";
     for (const auto &key : keys)
@@ -375,6 +397,7 @@ void HotkeyController::addDefaults(std::set<QString> &addedHotkeys)
                             QKeySequence("Alt+x"), "createClip",
                             std::vector<QString>(), "create clip");
 
+#ifndef Q_OS_MACOS
         this->tryAddDefault(addedHotkeys, HotkeyCategory::Split,
                             QKeySequence("Alt+left"), "focus", {"left"},
                             "focus left");
@@ -387,6 +410,7 @@ void HotkeyController::addDefaults(std::set<QString> &addedHotkeys)
         this->tryAddDefault(addedHotkeys, HotkeyCategory::Split,
                             QKeySequence("Alt+right"), "focus", {"right"},
                             "focus right");
+#endif
 
         this->tryAddDefault(addedHotkeys, HotkeyCategory::Split,
                             QKeySequence("PgUp"), "scrollPage", {"up"},
@@ -515,9 +539,11 @@ void HotkeyController::addDefaults(std::set<QString> &addedHotkeys)
                             QKeySequence("Ctrl+G"), "reopenSplit",
                             std::vector<QString>(), "reopen split");
 
+#ifndef Q_OS_MACOS
         this->tryAddDefault(addedHotkeys, HotkeyCategory::Window,
                             QKeySequence("Ctrl+H"), "toggleLocalR9K",
                             std::vector<QString>(), "toggle local r9k");
+#endif
 
         this->tryAddDefault(addedHotkeys, HotkeyCategory::Window,
                             QKeySequence("Ctrl+K"), "openQuickSwitcher",

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/BaseWindow.hpp"
 
 #include "Application.hpp"
@@ -8,8 +12,9 @@
 #include "util/DebugCount.hpp"
 #include "util/PostToThread.hpp"
 #include "util/WindowsHelper.hpp"
-#include "widgets/helper/EffectLabel.hpp"
-#include "widgets/helper/TitlebarButtons.hpp"
+#include "widgets/buttons/LabelButton.hpp"
+#include "widgets/buttons/TitlebarButton.hpp"
+#include "widgets/buttons/TitlebarButtons.hpp"
 #include "widgets/Label.hpp"
 #include "widgets/Window.hpp"
 
@@ -34,8 +39,6 @@
 #    include <QMargins>
 #    include <QOperatingSystemVersion>
 #endif
-
-#include "widgets/helper/TitlebarButton.hpp"
 
 namespace {
 
@@ -210,6 +213,13 @@ Qt::WindowFlags windowFlagsFor(FlagsEnum<BaseWindow::Flags> flags)
     out.setFlag(Qt::WindowStaysOnTopHint, flags.has(BaseWindow::TopMost));
     out.setFlag(Qt::FramelessWindowHint, flags.has(BaseWindow::Frameless));
 
+#ifdef Q_OS_LINUX
+    if (flags.has(BaseWindow::LinuxPopup))
+    {
+        out.setFlag(Qt::Popup);
+    }
+#endif
+
     return out;
 }
 
@@ -262,12 +272,12 @@ BaseWindow::BaseWindow(FlagsEnum<Flags> _flags, QWidget *parent)
 #endif
 
     this->themeChangedEvent();
-    DebugCount::increase("BaseWindow");
+    DebugCount::increase(DebugObject::BaseWindow);
 }
 
 BaseWindow::~BaseWindow()
 {
-    DebugCount::decrease("BaseWindow");
+    DebugCount::decrease(DebugObject::BaseWindow);
 }
 
 void BaseWindow::setInitialBounds(QRect bounds, widgets::BoundsChecking mode)
@@ -365,7 +375,14 @@ void BaseWindow::init()
         }
 
         this->ui_.layoutBase = new BaseWidget(this);
-        this->ui_.layoutBase->setContentsMargins(1, 0, 1, 1);
+        if (isWindows11OrGreater())
+        {
+            this->ui_.layoutBase->setContentsMargins(0, 0, 0, 0);
+        }
+        else
+        {
+            this->ui_.layoutBase->setContentsMargins(1, 0, 1, 1);
+        }
         layout->addWidget(this->ui_.layoutBase);
     }
 #endif
@@ -442,16 +459,6 @@ bool BaseWindow::isTopMost() const
     return this->isTopMost_ || this->flags_.has(TopMost);
 }
 
-void BaseWindow::setActionOnFocusLoss(ActionOnFocusLoss value)
-{
-    this->actionOnFocusLoss_ = value;
-}
-
-BaseWindow::ActionOnFocusLoss BaseWindow::getActionOnFocusLoss() const
-{
-    return this->actionOnFocusLoss_;
-}
-
 QWidget *BaseWindow::getLayoutContainer()
 {
     if (this->hasCustomWindowFrame())
@@ -478,6 +485,28 @@ bool BaseWindow::supportsCustomWindowFrame()
 #else
     return false;
 #endif
+}
+
+void BaseWindow::windowDeactivationEvent()
+{
+    switch (this->windowDeactivateAction)
+    {
+        case WindowDeactivateAction::Delete:
+            this->deleteLater();
+            break;
+
+        case WindowDeactivateAction::Close:
+            this->close();
+            break;
+
+        case WindowDeactivateAction::Hide:
+            this->hide();
+            break;
+
+        case WindowDeactivateAction::Nothing:
+        default:
+            break;
+    }
 }
 
 void BaseWindow::themeChangedEvent()
@@ -514,10 +543,9 @@ void BaseWindow::themeChangedEvent()
 
 bool BaseWindow::event(QEvent *event)
 {
-    if (event->type() ==
-        QEvent::WindowDeactivate /*|| event->type() == QEvent::FocusOut*/)
+    if (event->type() == QEvent::WindowDeactivate)
     {
-        this->onFocusLost();
+        this->windowDeactivationEvent();
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
@@ -564,37 +592,14 @@ void BaseWindow::wheelEvent(QWheelEvent *event)
     }
 }
 
-void BaseWindow::onFocusLost()
-{
-    switch (this->getActionOnFocusLoss())
-    {
-        case Delete: {
-            this->deleteLater();
-        }
-        break;
-
-        case Close: {
-            this->close();
-        }
-        break;
-
-        case Hide: {
-            this->hide();
-        }
-        break;
-
-        default:;
-    }
-}
-
 void BaseWindow::mousePressEvent(QMouseEvent *event)
 {
 #ifndef Q_OS_WIN
     if (this->flags_.has(FramelessDraggable))
     {
-        this->movingRelativePos = event->localPos();
-        if (auto *widget =
-                this->childAt(event->localPos().x(), event->localPos().y()))
+        this->movingRelativePos = event->position();
+        auto pos = event->position().toPoint();
+        if (auto *widget = this->childAt(pos.x(), pos.y()))
         {
             std::function<bool(QWidget *)> recursiveCheckMouseTracking;
             recursiveCheckMouseTracking = [&](QWidget *widget) {
@@ -611,7 +616,8 @@ void BaseWindow::mousePressEvent(QMouseEvent *event)
                 return recursiveCheckMouseTracking(widget->parentWidget());
             };
 
-            if (!recursiveCheckMouseTracking(widget))
+            if (!recursiveCheckMouseTracking(widget) &&
+                !this->windowHandle()->startSystemMove())
             {
                 this->moving = true;
             }
@@ -644,7 +650,8 @@ void BaseWindow::mouseMoveEvent(QMouseEvent *event)
     {
         if (this->moving)
         {
-            const auto &newPos = event->screenPos() - this->movingRelativePos;
+            auto newPos =
+                (event->globalPosition() - this->movingRelativePos).toPoint();
             this->move(newPos.x(), newPos.y());
         }
     }
@@ -653,34 +660,37 @@ void BaseWindow::mouseMoveEvent(QMouseEvent *event)
     BaseWidget::mouseMoveEvent(event);
 }
 
-TitleBarButton *BaseWindow::addTitleBarButton(const TitleBarButtonStyle &style,
-                                              std::function<void()> onClicked)
+void BaseWindow::focusOutEvent(QFocusEvent *event)
 {
-    TitleBarButton *button = new TitleBarButton;
-    button->setScaleIndependantSize(30, 30);
+    switch (this->focusOutAction)
+    {
+        case FocusOutAction::Hide:
+            this->hide();
+            break;
 
-    this->ui_.buttons.push_back(button);
-    this->ui_.titlebarBox->insertWidget(1, button);
-    button->setButtonStyle(style);
+        case FocusOutAction::None:
+        default:
+            break;
+    }
 
-    QObject::connect(button, &TitleBarButton::leftClicked, this, [onClicked] {
-        onClicked();
-    });
-
-    return button;
+    BaseWidget::focusOutEvent(event);
 }
 
-EffectLabel *BaseWindow::addTitleBarLabel(std::function<void()> onClicked)
+void BaseWindow::appendTitlebarButton(Button *button)
 {
-    EffectLabel *button = new EffectLabel;
-    button->setScaleIndependantHeight(30);
-
     this->ui_.buttons.push_back(button);
     this->ui_.titlebarBox->insertWidget(1, button);
+}
 
-    QObject::connect(button, &EffectLabel::leftClicked, this, [onClicked] {
-        onClicked();
-    });
+LabelButton *BaseWindow::addTitleBarLabel(std::function<void()> onClicked)
+{
+    auto *button = new LabelButton;
+    button->setScaleIndependentHeight(30);
+
+    this->appendTitlebarButton(button);
+
+    QObject::connect(button, &LabelButton::leftClicked, this,
+                     std::move(onClicked));
 
     return button;
 }
@@ -745,7 +755,7 @@ bool BaseWindow::applyLastBoundsCheck()
 void BaseWindow::resizeEvent(QResizeEvent *)
 {
     // Queue up save because: Window resized
-    if (!flags_.has(DisableLayoutSave))
+    if (!this->flags_.has(DisableLayoutSave))
     {
         getApp()->getWindows()->queueSave();
     }
@@ -760,7 +770,7 @@ void BaseWindow::moveEvent(QMoveEvent *event)
 {
     // Queue up save because: Window position changed
 #ifdef CHATTERINO
-    if (!flags_.has(DisableLayoutSave))
+    if (!this->flags_.has(DisableLayoutSave))
     {
         getApp()->getWindows()->queueSave();
     }
@@ -961,14 +971,17 @@ void BaseWindow::scaleChangedEvent(float scale)
 void BaseWindow::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
+    this->drawOutline(painter);
+    this->drawCustomWindowFrame(painter);
+}
 
+void BaseWindow::drawOutline(QPainter &painter)
+{
     if (this->frameless_)
     {
         painter.setPen(QColor("#999"));
         painter.drawRect(0, 0, this->width() - 1, this->height() - 1);
     }
-
-    this->drawCustomWindowFrame(painter);
 }
 
 float BaseWindow::desiredScale() const
@@ -1069,8 +1082,17 @@ void BaseWindow::drawCustomWindowFrame(QPainter &painter)
             {
                 painter.setTransform(QTransform::fromScale(1 / dpr, 1 / dpr));
             }
-            painter.fillRect(1, 1, this->realBounds_.width() - 2,
-                             this->realBounds_.height() - 2, bg);
+
+            if (isWindows11OrGreater())
+            {
+                painter.fillRect(0, 0, this->realBounds_.width() - 1,
+                                 this->realBounds_.height() - 1, bg);
+            }
+            else
+            {
+                painter.fillRect(1, 1, this->realBounds_.width() - 2,
+                                 this->realBounds_.height() - 2, bg);
+            }
         }
     }
 #endif

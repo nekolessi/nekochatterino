@@ -1,6 +1,11 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/dialogs/UpdateDialog.hpp"
 
 #include "Application.hpp"
+#include "common/Version.hpp"
 #include "singletons/Updates.hpp"
 #include "util/LayoutCreator.hpp"
 #include "widgets/Label.hpp"
@@ -15,6 +20,8 @@ UpdateDialog::UpdateDialog()
     : BaseWindow({BaseWindow::Frameless, BaseWindow::TopMost,
                   BaseWindow::EnableCustomFrame, BaseWindow::DisableLayoutSave})
 {
+    this->windowDeactivateAction = WindowDeactivateAction::Delete;
+
     auto layout =
         LayoutCreator<UpdateDialog>(this).setLayoutType<QVBoxLayout>();
 
@@ -23,7 +30,17 @@ UpdateDialog::UpdateDialog()
         ->setWordWrap(true);
 
     auto buttons = layout.emplace<QDialogButtonBox>();
-    auto *install = buttons->addButton("Install", QDialogButtonBox::AcceptRole);
+
+    const auto *installText = [] {
+        if (Version::instance().isNightly())
+        {
+            return "Yes";
+        }
+
+        return "Install";
+    }();
+    auto *install =
+        buttons->addButton(installText, QDialogButtonBox::AcceptRole);
     this->ui_.installButton = install;
     auto *dismiss = buttons->addButton("Dismiss", QDialogButtonBox::RejectRole);
 
@@ -32,7 +49,7 @@ UpdateDialog::UpdateDialog()
         this->close();
     });
     QObject::connect(dismiss, &QPushButton::clicked, this, [this] {
-        this->buttonClicked.invoke(Dismiss);
+        this->dismissed.invoke();
         this->close();
     });
 
@@ -42,8 +59,8 @@ UpdateDialog::UpdateDialog()
                                           this->updateStatusChanged(status);
                                       });
 
-    this->setScaleIndependantHeight(150);
-    this->setScaleIndependantWidth(250);
+    this->setScaleIndependentHeight(150);
+    this->setScaleIndependentWidth(250);
 }
 
 void UpdateDialog::updateStatusChanged(Updates::Status status)
@@ -54,17 +71,7 @@ void UpdateDialog::updateStatusChanged(Updates::Status status)
     {
         case Updates::UpdateAvailable: {
             this->ui_.label->setText(
-                (getApp()->getUpdates().isDowngrade()
-                     ? QString(
-                           "The version online (%1) seems to be lower than the "
-                           "current (%2).\nEither a version was reverted or "
-                           "you are running a newer build.\n\nDo you want to "
-                           "download and install it?")
-                           .arg(getApp()->getUpdates().getOnlineVersion(),
-                                getApp()->getUpdates().getCurrentVersion())
-                     : QString("An update (%1) is available.\n\nDo you want to "
-                               "download and install it?")
-                           .arg(getApp()->getUpdates().getOnlineVersion())));
+                getApp()->getUpdates().buildUpdateAvailableText());
             this->updateGeometry();
         }
         break;
@@ -88,6 +95,18 @@ void UpdateDialog::updateStatusChanged(Updates::Status status)
 
         case Updates::WriteFileFailed: {
             this->ui_.label->setText("Failed to save the update to disk.");
+        }
+        break;
+
+        case Updates::MissingPortableUpdater: {
+            this->ui_.label->setText("The portable updater (expected in " %
+                                     Updates::portableUpdaterPath() %
+                                     ") was not found.");
+        }
+        break;
+
+        case Updates::RunUpdaterFailed: {
+            this->ui_.label->setText("Failed to run the updater.");
         }
         break;
 

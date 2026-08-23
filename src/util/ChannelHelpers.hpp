@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Channel.hpp"
@@ -55,8 +59,8 @@ void addOrReplaceChannelTimeout(const Buf &buffer, MessagePtr message,
         if (timeoutStackStyle == TimeoutStackStyle::DontStackBeyondUserMessage)
         {
             if (s->loginName == message->timeoutUser &&
-                s->flags.hasNone({MessageFlag::Disabled, MessageFlag::Timeout,
-                                  MessageFlag::Untimeout}))
+                s->flags.hasNone(
+                    {MessageFlag::Disabled, MessageFlag::ModerationAction}))
             {
                 break;
             }
@@ -114,12 +118,13 @@ void addOrReplaceChannelTimeout(const Buf &buffer, MessagePtr message,
         {
             auto &s = buffer[i];
             if (s->loginName == message->timeoutUser &&
-                s->flags.hasNone({MessageFlag::Timeout, MessageFlag::Untimeout,
-                                  MessageFlag::Whisper}))
+                s->flags.hasNone(
+                    {MessageFlag::ModerationAction, MessageFlag::Whisper}))
             {
                 // FOURTF: disabled for now
                 // PAJLADA: Shitty solution described in Message.hpp
                 s->flags.set(MessageFlag::Disabled);
+                s->flags.set(MessageFlag::InvalidReplyTarget);
             }
         }
     }

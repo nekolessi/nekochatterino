@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "messages/Image.hpp"
 
 #include "Application.hpp"
@@ -5,9 +9,9 @@
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
+#include "controllers/emotes/EmoteController.hpp"
 #include "debug/AssertInGuiThread.hpp"
 #include "debug/Benchmark.hpp"
-#include "singletons/Emotes.hpp"
 #include "singletons/helper/GifTimer.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/DebugCount.hpp"
@@ -32,25 +36,33 @@ namespace chatterino::detail {
 
 Frames::Frames()
 {
-    DebugCount::increase("images");
+    DebugCount::increase(DebugObject::Image);
 }
 
 Frames::Frames(QList<Frame> &&frames)
     : items_(std::move(frames))
 {
     assertInGuiThread();
-    DebugCount::increase("images");
+    auto *app = tryGetApp();
+    if (app == nullptr)
+    {
+        qCDebug(chatterinoImage)
+            << "Frames constructor called while app is shutting down";
+        return;
+    }
+
+    DebugCount::increase(DebugObject::Image);
     if (!this->empty())
     {
-        DebugCount::increase("loaded images");
+        DebugCount::increase(DebugObject::LoadedImage);
     }
 
     if (this->animated())
     {
-        DebugCount::increase("animated images");
+        DebugCount::increase(DebugObject::AnimatedImage);
 
         this->gifTimerConnection_ =
-            getApp()->getEmotes()->getGIFTimer().signal.connect([this] {
+            app->getEmotes()->getGIFTimer()->signal.connect([this] {
                 this->advance();
             });
 
@@ -67,32 +79,31 @@ Frames::Frames(QList<Frame> &&frames)
         else
         {
             this->durationOffset_ = std::min<int>(
-                int(getApp()->getEmotes()->getGIFTimer().position() %
-                    totalLength),
+                int(app->getEmotes()->getGIFTimer()->position() % totalLength),
                 60000);
         }
         this->processOffset();
     }
 
-    DebugCount::increase("image bytes", this->memoryUsage());
-    DebugCount::increase("image bytes (ever loaded)", this->memoryUsage());
+    DebugCount::increase(DebugObject::BytesImageCurrent, this->memoryUsage());
+    DebugCount::increase(DebugObject::BytesImageLoaded, this->memoryUsage());
 }
 
 Frames::~Frames()
 {
     assertInGuiThread();
-    DebugCount::decrease("images");
+    DebugCount::decrease(DebugObject::Image);
     if (!this->empty())
     {
-        DebugCount::decrease("loaded images");
+        DebugCount::decrease(DebugObject::LoadedImage);
     }
 
     if (this->animated())
     {
-        DebugCount::decrease("animated images");
+        DebugCount::decrease(DebugObject::AnimatedImage);
     }
-    DebugCount::decrease("image bytes", this->memoryUsage());
-    DebugCount::increase("image bytes (ever unloaded)", this->memoryUsage());
+    DebugCount::decrease(DebugObject::BytesImageCurrent, this->memoryUsage());
+    DebugCount::increase(DebugObject::BytesImageUnloaded, this->memoryUsage());
 
     this->gifTimerConnection_.disconnect();
 }
@@ -145,10 +156,10 @@ void Frames::clear()
     assertInGuiThread();
     if (!this->empty())
     {
-        DebugCount::decrease("loaded images");
+        DebugCount::decrease(DebugObject::LoadedImage);
     }
-    DebugCount::decrease("image bytes", this->memoryUsage());
-    DebugCount::increase("image bytes (ever unloaded)", this->memoryUsage());
+    DebugCount::decrease(DebugObject::BytesImageCurrent, this->memoryUsage());
+    DebugCount::increase(DebugObject::BytesImageUnloaded, this->memoryUsage());
 
     this->items_.clear();
     this->index_ = 0;
@@ -243,14 +254,19 @@ void assignFrames(std::weak_ptr<Image> weak, QList<Frame> parsed)
         if (!isPushQueued)
         {
             isPushQueued = true;
-            postToThread([] {
-                isPushQueued = false;
-                auto *app = tryGetApp();
-                if (app != nullptr)
-                {
-                    app->getWindows()->forceLayoutChannelViews();
-                }
-            });
+            // We don't use postToThread here, because that would run immediately.
+            // We explicitly want to queue a callback after the current ones.
+            QMetaObject::invokeMethod(
+                qApp,
+                [] {
+                    isPushQueued = false;
+                    auto *app = tryGetApp();
+                    if (app != nullptr)
+                    {
+                        app->getWindows()->forceLayoutChannelViews();
+                    }
+                },
+                Qt::QueuedConnection);
         }
     };
 
@@ -272,6 +288,15 @@ Image::~Image()
     {
         // No data in this image, don't bother trying to release it
         // The reason we do this check is that we keep a few (or one) static empty image around that are deconstructed at the end of the programs lifecycle, and we want to prevent the isGuiThread call to be called after the QApplication has been exited
+        return;
+    }
+
+    if (isAppAboutToQuit())
+    {
+        if (this->frames_)
+        {
+            std::ignore = this->frames_.release();
+        }
         return;
     }
 
@@ -468,6 +493,19 @@ int Image::height() const
     return static_cast<int>(this->expectedSize_.height() * this->scale_);
 }
 
+QSizeF Image::size() const
+{
+    assertInGuiThread();
+
+    if (auto pixmap = this->frames_->first())
+    {
+        return pixmap->size().toSizeF() * this->scale_;
+    }
+
+    // No frames loaded, use the expected size
+    return this->expectedSize_.toSizeF() * this->scale_;
+}
+
 void Image::actuallyLoad()
 {
     auto weak = weakOf(this);
@@ -480,6 +518,8 @@ void Image::actuallyLoad()
             {
                 return;
             }
+
+            assert(!isAppAboutToQuit());
 
             QBuffer buffer;
             buffer.setData(result.getData());
@@ -568,13 +608,6 @@ ImageExpirationPool::ImageExpirationPool()
     this->freeTimer_->start(
         std::chrono::duration_cast<std::chrono::milliseconds>(
             IMAGE_POOL_CLEANUP_INTERVAL));
-
-    // configure all debug counts used by images
-    DebugCount::configure("image bytes", DebugCount::Flag::DataSize);
-    DebugCount::configure("image bytes (ever loaded)",
-                          DebugCount::Flag::DataSize);
-    DebugCount::configure("image bytes (ever unloaded)",
-                          DebugCount::Flag::DataSize);
 }
 
 ImageExpirationPool &ImageExpirationPool::instance()
@@ -655,9 +688,9 @@ void ImageExpirationPool::freeOld()
     qCDebug(chatterinoImage) << "freed frame data for" << numExpired << "/"
                              << eligible << "eligible images";
 #    endif
-    DebugCount::set("last image gc: expired", numExpired);
-    DebugCount::set("last image gc: eligible", eligible);
-    DebugCount::set("last image gc: left after gc", this->allImages_.size());
+    DebugCount::set(DebugObject::LastImageGcExpired, numExpired);
+    DebugCount::set(DebugObject::LastImageGcEligible, eligible);
+    DebugCount::set(DebugObject::LastImageGcLeft, this->allImages_.size());
 }
 
 #endif

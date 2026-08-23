@@ -39,11 +39,7 @@
     },
     "output": [
         {
-            "badgeInfos": {
-            },
-            "badges": [
-            ],
-            "channelName": "",
+            "channelName": "testaccount_420",
             "count": 1,
             "displayName": "",
             "elements": [
@@ -55,7 +51,7 @@
                             "type": "None",
                             "value": ""
                         },
-                        "style": "ChatMedium",
+                        "style": "TimestampMedium",
                         "tooltip": "",
                         "trailingSpace": true,
                         "type": "TextElement",
@@ -191,7 +187,10 @@
                     ]
                 }
             ],
-            "flags": "System|Timeout|EventSub",
+            "externalBadges": [
+            ],
+            "flags": "System|Timeout|PubSub|SharedMessage|EventSub|ModerationAction",
+            "frozen": true,
             "id": "",
             "localizedName": "",
             "loginName": "nerixyz",
@@ -199,6 +198,10 @@
             "searchText": "nerixyz banned twitchdev in testaccount_420: a reason 😂 ",
             "serverReceivedTime": "2024-05-14T12:31:47Z",
             "timeoutUser": "twitchdev",
+            "twitchBadgeInfos": {
+            },
+            "twitchBadges": [
+            ],
             "userID": "",
             "usernameColor": "#ff000000"
         }

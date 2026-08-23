@@ -1,11 +1,16 @@
+// SPDX-FileCopyrightText: 2024 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/OverlayWindow.hpp"
 
 #include "Application.hpp"
 #include "common/FlagsEnum.hpp"
 #include "common/Literals.hpp"
 #include "common/QLogging.hpp"
+#include "controllers/emotes/EmoteController.hpp"
 #include "controllers/hotkeys/HotkeyController.hpp"
-#include "singletons/Emotes.hpp"
+#include "singletons/helper/GifTimer.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/PostToThread.hpp"
@@ -20,7 +25,9 @@
 #include <QGraphicsEffect>
 #include <QGridLayout>
 #include <QKeySequence>
+#include <QMessageBox>
 #include <QSizeGrip>
+#include <QWindow>
 
 #ifdef Q_OS_WIN
 #    include <Windows.h>
@@ -190,7 +197,7 @@ OverlayWindow::OverlayWindow(IndirectChannel channel,
     this->updateScale();
 
     this->triggerFirstActivation();
-    getApp()->getEmotes()->getGIFTimer().registerOpenOverlayWindow();
+    getApp()->getEmotes()->getGIFTimer()->registerOpenOverlayWindow();
 }
 
 OverlayWindow::~OverlayWindow()
@@ -198,7 +205,7 @@ OverlayWindow::~OverlayWindow()
 #ifdef Q_OS_WIN
     ::DestroyCursor(this->sizeAllCursor_);
 #endif
-    getApp()->getEmotes()->getGIFTimer().unregisterOpenOverlayWindow();
+    getApp()->getEmotes()->getGIFTimer()->unregisterOpenOverlayWindow();
 }
 
 void OverlayWindow::applyTheme()
@@ -230,9 +237,13 @@ bool OverlayWindow::eventFilter(QObject * /*object*/, QEvent *event)
     switch (event->type())
     {
         case QEvent::MouseButtonPress: {
+            if (this->windowHandle()->startSystemMove())
+            {
+                return true;
+            }
             auto *evt = dynamic_cast<QMouseEvent *>(event);
             this->moving_ = true;
-            this->moveOrigin_ = evt->globalPos();
+            this->moveOrigin_ = evt->globalPosition().toPoint();
             return true;
         }
         break;
@@ -249,9 +260,10 @@ bool OverlayWindow::eventFilter(QObject * /*object*/, QEvent *event)
             auto *evt = dynamic_cast<QMouseEvent *>(event);
             if (this->moving_)
             {
-                auto newPos = evt->globalPos() - this->moveOrigin_;
+                auto newPos =
+                    (evt->globalPosition() - this->moveOrigin_).toPoint();
                 this->move(newPos + this->pos());
-                this->moveOrigin_ = evt->globalPos();
+                this->moveOrigin_ = evt->globalPosition().toPoint();
                 return true;
             }
             if (this->interaction_.isInteracting())
@@ -609,6 +621,10 @@ void OverlayWindow::setInert(bool inert)
     {
         this->interaction_.show();
     }
+}
+
+void OverlayWindow::drawOutline(QPainter & /* painter */)
+{
 }
 
 }  // namespace chatterino

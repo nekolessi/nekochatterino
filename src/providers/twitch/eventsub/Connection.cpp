@@ -1,15 +1,21 @@
+// SPDX-FileCopyrightText: 2025 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/twitch/eventsub/Connection.hpp"
 
 #include "Application.hpp"
 #include "common/QLogging.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/highlights/HighlightController.hpp"
+#include "controllers/highlights/HighlightResult.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "providers/twitch/eventsub/Controller.hpp"
 #include "providers/twitch/eventsub/MessageBuilder.hpp"
 #include "providers/twitch/eventsub/MessageHandlers.hpp"
-#include "providers/twitch/PubSubActions.hpp"
+#include "providers/twitch/PubSubManager.hpp"
+#include "providers/twitch/TwitchBadge.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "singletons/Settings.hpp"
@@ -75,6 +81,11 @@ void Connection::onNotification(const lib::messages::Metadata &metadata,
 void Connection::onClose(std::unique_ptr<lib::Listener> self,
                          const std::optional<std::string> &reconnectURL)
 {
+    if (isAppAboutToQuit())
+    {
+        return;
+    }
+
     auto *app = tryGetApp();
     if (!app)
     {
@@ -170,8 +181,24 @@ void Connection::onChannelModerate(
     std::visit(
         [&](auto &&action) {
             using Action = std::remove_cvref_t<decltype(action)>;
+            static_assert(CanMakeModMessage<Action> ||
+                              CanHandleModMessage<Action> ||
+                              std::is_same_v<Action, std::string>,
+                          "All actions must be handled");
+
+            if constexpr (std::is_same_v<Action, std::string>)
+            {
+                qCWarning(LOG) << "Unhandled moderation action:"
+                               << QUtf8StringView(action);
+            }
+
             if constexpr (CanMakeModMessage<Action>)
             {
+                // FIXME: This message should still be added, but instead hidden during layout if the setting is enabled.
+                if (getSettings()->hideDeletionActions)
+                {
+                    return;
+                }
                 EventSubMessageBuilder builder(channel, now);
                 builder->loginName = payload.event.moderatorUserLogin.qt();
                 makeModerateMessage(builder, payload.event, action);
@@ -278,12 +305,9 @@ void Connection::onChannelSuspiciousUserMessage(
     if (payload.event.lowTrustStatus !=
         lib::suspicious_users::Status::Restricted)
     {
-        return;
-    }
-
-    if (getSettings()->streamerModeHideModActions &&
-        getApp()->getStreamerMode()->isEnabled())
-    {
+        qCInfo(LOG) << "Ignoring low trust status message from user"
+                    << payload.event.userLogin.qt() << "because status is"
+                    << static_cast<std::uint8_t>(payload.event.lowTrustStatus);
         return;
     }
 
@@ -398,12 +422,42 @@ bool Connection::isSubscribedTo(const SubscriptionRequest &request) const
 
 void Connection::markRequestSubscribed(const SubscriptionRequest &request)
 {
+    assert((this->twitchUserID.isEmpty() ||
+            this->twitchUserID == request.ownerTwitchUserID) &&
+           "A subscription was made when another user's subscriptions were "
+           "still active");
+
+    this->twitchUserID = request.ownerTwitchUserID;
+
     this->subscriptions.emplace(request);
 }
 
 void Connection::markRequestUnsubscribed(const SubscriptionRequest &request)
 {
     this->subscriptions.erase(request);
+
+    if (this->subscriptions.empty())
+    {
+        // TODO: Verify that it's fine for us to reuse a connection for another
+        // user after all old subscriptions are gone
+        this->twitchUserID.clear();
+    }
+}
+
+bool Connection::canHandleSubscriptionFrom(
+    const QString &otherTwitchUserID) const
+{
+    return this->twitchUserID.isEmpty() ||
+           this->twitchUserID == otherTwitchUserID;
+}
+
+void Connection::debug()
+{
+    for (const auto &request : this->subscriptions)
+    {
+        qCInfo(LOG).noquote().nospace()
+            << this->getSessionID() << " -> " << request;
+    }
 }
 
 }  // namespace chatterino::eventsub

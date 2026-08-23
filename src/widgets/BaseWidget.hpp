@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <pajlada/signals/signal.hpp>
@@ -26,13 +30,13 @@ public:
     std::optional<float> overrideScale() const;
     void setOverrideScale(std::optional<float>);
 
-    QSize scaleIndependantSize() const;
-    int scaleIndependantWidth() const;
-    int scaleIndependantHeight() const;
-    void setScaleIndependantSize(int width, int height);
-    void setScaleIndependantSize(QSize);
-    void setScaleIndependantWidth(int value);
-    void setScaleIndependantHeight(int value);
+    QSize scaleIndependentSize() const;
+    int scaleIndependentWidth() const;
+    int scaleIndependentHeight() const;
+    void setScaleIndependentSize(int width, int height);
+    void setScaleIndependentSize(QSize);
+    void setScaleIndependentWidth(int value);
+    void setScaleIndependentHeight(int value);
 
 protected:
     void childEvent(QChildEvent *) override;
@@ -56,7 +60,7 @@ protected:
 private:
     float scale_{1.f};
     std::optional<float> overrideScale_;
-    QSize scaleIndependantSize_;
+    QSize scaleIndependentSize_;
 
     std::vector<BaseWidget *> widgets_;
 

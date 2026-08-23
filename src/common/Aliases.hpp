@@ -1,9 +1,14 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <boost/container_hash/hash_fwd.hpp>
-#include <QHash>
+#include <QHashFunctions>
 #include <QString>
 
+#include <cstddef>
 #include <functional>
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

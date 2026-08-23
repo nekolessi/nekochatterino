@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "widgets/BasePopup.hpp"
@@ -28,6 +32,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
+    void themeChangedEvent() override;
 
 private:
     ChannelView *globalEmotesView_{};

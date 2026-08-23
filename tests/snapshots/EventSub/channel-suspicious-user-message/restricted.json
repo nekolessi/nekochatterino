@@ -27,10 +27,6 @@
     },
     "output": [
         {
-            "badgeInfos": {
-            },
-            "badges": [
-            ],
             "channelName": "pajlada",
             "count": 1,
             "displayName": "",
@@ -85,7 +81,10 @@
                     ]
                 }
             ],
-            "flags": "LowTrustUsers|EventSub",
+            "externalBadges": [
+            ],
+            "flags": "LowTrustUsers|RestrictedMessage|EventSub",
+            "frozen": true,
             "id": "",
             "localizedName": "",
             "loginName": "",
@@ -93,14 +92,14 @@
             "searchText": "Suspicious User: Restricted",
             "serverReceivedTime": "2024-05-14T12:31:47Z",
             "timeoutUser": "",
+            "twitchBadgeInfos": {
+            },
+            "twitchBadges": [
+            ],
             "userID": "",
             "usernameColor": "#ff000000"
         },
         {
-            "badgeInfos": {
-            },
-            "badges": [
-            ],
             "channelName": "pajlada",
             "count": 1,
             "displayName": "",
@@ -128,7 +127,7 @@
                             "type": "None",
                             "value": ""
                         },
-                        "style": "ChatMedium",
+                        "style": "TimestampMedium",
                         "tooltip": "",
                         "trailingSpace": true,
                         "type": "TextElement",
@@ -191,7 +190,10 @@
                     ]
                 }
             ],
+            "externalBadges": [
+            ],
             "flags": "PubSub|LowTrustUsers|RestrictedMessage|EventSub",
+            "frozen": true,
             "id": "",
             "localizedName": "",
             "loginName": "nerixyz",
@@ -199,6 +201,10 @@
             "searchText": "nerixyz: FeelsDankMan",
             "serverReceivedTime": "2024-05-14T12:31:47Z",
             "timeoutUser": "",
+            "twitchBadgeInfos": {
+            },
+            "twitchBadges": [
+            ],
             "userID": "",
             "usernameColor": "#ff000000"
         }

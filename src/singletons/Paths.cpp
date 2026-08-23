@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "singletons/Paths.hpp"
 
 #include "common/Modes.hpp"
@@ -39,7 +43,7 @@ QString Paths::cacheDirectory() const
     static const auto pathSetting = [] {
         QStringSetting cachePathSetting("/cache/path");
 
-        cachePathSetting.connect([](const auto &newPath, auto) {
+        cachePathSetting.connect([](const auto &newPath) {
             if (!newPath.isEmpty())
             {
                 QDir().mkpath(newPath);
@@ -57,6 +61,11 @@ QString Paths::cacheDirectory() const
     }
 
     return path;
+}
+
+QString Paths::cacheFilePath(const QString &fileName) const
+{
+    return combinePath(this->cacheDirectory(), fileName);
 }
 
 void Paths::initAppFilePathHash()
@@ -140,6 +149,7 @@ void Paths::initSubDirectories()
     this->pluginsDirectory = makePath("Plugins");
     this->themesDirectory = makePath("Themes");
     this->crashdumpDirectory = makePath("Crashes");
+    this->dictionariesDirectory = makePath("Dictionaries");
 #ifdef Q_OS_WIN
     this->ipcDirectory = makePath("IPC");
 #else

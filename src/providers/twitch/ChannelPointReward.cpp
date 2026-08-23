@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/twitch/ChannelPointReward.hpp"
 
 #include "common/Literals.hpp"
@@ -58,13 +62,13 @@ ChannelPointReward::ChannelPointReward(const QJsonObject &redemption)
     }
 
     // use bits cost when channel points were not used
-    if (cost == 0)
+    if (this->cost == 0)
     {
         this->cost = reward.value("bits_cost").toInt();
     }
 
     // workaround twitch bug where bits_cost is always 0 in practice
-    if (cost == 0)
+    if (this->cost == 0)
     {
         this->cost = reward.value("default_bits_cost").toInt();
     }
@@ -106,13 +110,13 @@ ChannelPointReward::ChannelPointReward(const QJsonObject &redemption)
     }
     else
     {
-        static const ImageSet defaultImage{
+        static const ImageSet *defaultImage = new ImageSet{
             Image::fromUrl({twitchChannelPointRewardUrl("1.png")}, 1, baseSize),
             Image::fromUrl({twitchChannelPointRewardUrl("2.png")}, 0.5,
                            baseSize * 2),
             Image::fromUrl({twitchChannelPointRewardUrl("4.png")}, 0.25,
                            baseSize * 4)};
-        this->image = defaultImage;
+        this->image = *defaultImage;
     }
 }
 

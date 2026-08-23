@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/helper/IconDelegate.hpp"
 
 #include <QPainter>
@@ -15,7 +19,7 @@ void IconDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 {
     auto data = index.data(Qt::DecorationRole);
 
-    if (data.type() != QVariant::Pixmap)
+    if (data.metaType() != QMetaType::fromType<QPixmap>())
     {
         return QStyledItemDelegate::paint(painter, option, index);
     }

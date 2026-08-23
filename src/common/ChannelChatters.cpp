@@ -1,8 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "common/ChannelChatters.hpp"
 
 #include "common/Channel.hpp"
-#include "messages/Message.hpp"
+#include "controllers/ignores/IgnoreController.hpp"
+#include "debug/AssertInGuiThread.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/twitch/TwitchAccount.hpp"
 
 #include <QColor>
 
@@ -25,10 +31,23 @@ void ChannelChatters::addRecentChatter(const QString &user)
     chatters->addRecentChatter(user);
 }
 
-void ChannelChatters::addJoinedUser(const QString &user)
+void ChannelChatters::addJoinedUser(const QString &user, bool isMod,
+                                    bool isBroadcaster)
 {
-    auto joinedUsers = this->joinedUsers_.access();
-    joinedUsers->append(user);
+    assertInGuiThread();
+
+    if (isIgnoredMessage(IgnoredMessageParameters{
+            .message = {},
+            .twitchUserID = {},
+            .twitchUserLogin = user,
+            .isMod = isMod,
+            .isBroadcaster = isBroadcaster,
+        }))
+    {
+        return;
+    }
+
+    this->joinedUsers_.access()->append(user);
 
     if (!this->joinedUsersMergeQueued_)
     {
@@ -50,10 +69,23 @@ void ChannelChatters::addJoinedUser(const QString &user)
     }
 }
 
-void ChannelChatters::addPartedUser(const QString &user)
+void ChannelChatters::addPartedUser(const QString &user, bool isMod,
+                                    bool isBroadcaster)
 {
-    auto partedUsers = this->partedUsers_.access();
-    partedUsers->append(user);
+    assertInGuiThread();
+
+    if (isIgnoredMessage(IgnoredMessageParameters{
+            .message = {},
+            .twitchUserID = {},
+            .twitchUserLogin = user,
+            .isMod = isMod,
+            .isBroadcaster = isBroadcaster,
+        }))
+    {
+        return;
+    }
+
+    this->partedUsers_.access()->append(user);
 
     if (!this->partedUsersMergeQueued_)
     {
@@ -88,7 +120,7 @@ size_t ChannelChatters::colorsSize() const
     return size;
 }
 
-const QColor ChannelChatters::getUserColor(const QString &user)
+QColor ChannelChatters::getUserColor(const QString &user) const
 {
     const auto chatterColors = this->chatterColors_.access();
 

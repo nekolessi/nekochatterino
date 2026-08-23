@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "util/QStringHash.hpp"
@@ -15,9 +19,16 @@ struct HelixBlock;
 struct HelixUser;
 
 struct TwitchUser {
+    /// The Twitch User ID (e.g. `117166826`)
     QString id;
+
+    /// The Twitch User Login (e.g. `testaccount_420`)
     mutable QString name;
+
+    // The Twitch User Display Name (e.g. `테스트계정420`)
     mutable QString displayName;
+
+    mutable QString profilePictureUrl;
 
     void update(const TwitchUser &other) const
     {
@@ -25,6 +36,7 @@ struct TwitchUser {
 
         this->name = other.name;
         this->displayName = other.displayName;
+        this->profilePictureUrl = other.profilePictureUrl;
     }
 
     void update(const HelixUser &user) const;

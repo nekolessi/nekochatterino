@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/dialogs/switcher/QuickSwitcherPopup.hpp"
 
 #include "Application.hpp"
@@ -48,8 +52,9 @@ QuickSwitcherPopup::QuickSwitcherPopup(Window *parent)
     , switcherModel_(this)
     , window(parent)
 {
-    this->setWindowFlag(Qt::Dialog);
-    this->setActionOnFocusLoss(BaseWindow::ActionOnFocusLoss::Delete);
+    assert(this->windowFlags().testFlag(Qt::Dialog));
+
+    this->windowDeactivateAction = WindowDeactivateAction::Delete;
     this->setMinimumSize(QuickSwitcherPopup::MINIMUM_SIZE);
 
     this->initWidgets();

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "common/network/NetworkResult.hpp"
 
 #include "common/QLogging.hpp"
@@ -40,6 +44,25 @@ QJsonArray NetworkResult::parseJsonArray() const
     }
 
     return jsonDoc.array();
+}
+
+QJsonValue NetworkResult::parseJsonValue() const
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    return QJsonValue::fromJson(this->data_);
+#else
+    QJsonDocument jsonDoc(QJsonDocument::fromJson(this->data_));
+    if (jsonDoc.isArray())
+    {
+        return jsonDoc.array();
+    }
+    if (jsonDoc.isObject())
+    {
+        return jsonDoc.object();
+    }
+
+    return {};  // undefined
+#endif
 }
 
 rapidjson::Document NetworkResult::parseRapidJson() const

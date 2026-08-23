@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2016 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/ChatterinoSetting.hpp"
@@ -7,6 +11,7 @@
 #include <pajlada/settings/setting.hpp>
 #include <QColor>
 #include <QJsonObject>
+#include <QPalette>
 #include <QPixmap>
 #include <QString>
 #include <QTimer>
@@ -145,15 +150,18 @@ public:
 
         struct {
             QColor background;
+            QColor backgroundPulse;
             QColor text;
+            // Used by the ChatterListWidget & QuickSwitcherPopup
             QString styleSheet;
         } input;
     } splits;
 
     struct {
         QPixmap copy;
-        QPixmap pin;
     } buttons;
+
+    QPalette palette;
 
     void normalizeColor(QColor &color) const;
     void update();

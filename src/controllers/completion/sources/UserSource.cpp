@@ -1,9 +1,14 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "controllers/completion/sources/UserSource.hpp"
 
 #include "controllers/completion/sources/Helpers.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
 #include "util/Helpers.hpp"
+#include "widgets/splits/InputCompletionItem.hpp"
 
 namespace chatterino::completion {
 

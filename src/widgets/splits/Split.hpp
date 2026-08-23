@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2016 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Aliases.hpp"
@@ -57,10 +61,13 @@ public:
     void setChannel(IndirectChannel newChannel);
 
     void setFilters(const QList<QUuid> ids);
-    const QList<QUuid> getFilters() const;
+    QList<QUuid> getFilters() const;
 
     void setModerationMode(bool value);
     bool getModerationMode() const;
+
+    std::optional<bool> checkSpellingOverride() const;
+    void setCheckSpellingOverride(std::optional<bool> override);
 
     void insertTextToInput(const QString &text);
 
@@ -110,11 +117,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     void enterEvent(QEnterEvent * /*event*/) override;
-#else
-    void enterEvent(QEvent * /*event*/) override;
-#endif
     void leaveEvent(QEvent *event) override;
 
     void dragEnterEvent(QDragEnterEvent *event) override;
@@ -127,17 +130,21 @@ private:
     void addShortcuts() override;
 
     /**
-     * @brief Opens Twitch channel stream in a browser player (opens a formatted link)
+     * @brief Opens a Twitch channel's stream in your default browser's player (opens a formatted link)
      */
     void openChannelInBrowserPlayer(ChannelPtr channel);
     /**
-     * @brief Opens Twitch channel stream in streamlink app (if stream is live and streamlink is installed)
+     * @brief Opens a Twitch channel's stream in streamlink (if the stream's live, and streamlink's installed)
      */
     void openChannelInStreamlink(const QString channelName);
     /**
-     * @brief Opens Twitch channel chat in a new Chatterino tab
+     * @brief Opens a Twitch channel's stream in your custom player (if the stream's live, and the custom player protocol's set)
      */
-    void joinChannelInNewTab(ChannelPtr channel);
+    void openChannelInCustomPlayer(QString channelName);
+    /**
+     * @brief Opens a Twitch channel's chat in a new tab
+     */
+    void joinChannelInNewTab(const ChannelPtr &channel);
 
     /**
      * @brief Refresh moderation mode layouts/buttons
@@ -194,9 +201,8 @@ public Q_SLOTS:
     void openWithCustomScheme();
     void setFiltersDialog();
     void showSearch(bool singleChannel);
-    void showChatterList();
+    void openChatterList();
     void openSubPage();
-    void reloadChannelAndSubscriberEmotes();
     void reconnect();
 };
 

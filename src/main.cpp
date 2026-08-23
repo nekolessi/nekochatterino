@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2016 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "BrowserExtension.hpp"
 #include "common/Args.hpp"
 #include "common/Env.hpp"
@@ -15,12 +19,18 @@
 #include "util/AttachToConsole.hpp"
 #include "util/IpcQueue.hpp"
 
+#ifdef Q_OS_MACOS
+#    include "util/MacOsHelpers.h"
+#endif
+
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QMessageBox>
 #include <QSslSocket>
 #include <QStringList>
-#include <QtCore/QtPlugin>
+#ifdef Q_OS_WIN
+#    include <shobjidl_core.h>
+#endif
 
 #include <memory>
 
@@ -37,6 +47,10 @@ int main(int argc, char **argv)
     QCoreApplication::setApplicationName("chatterino");
     QCoreApplication::setApplicationVersion(CHATTERINO_VERSION);
     QCoreApplication::setOrganizationDomain("chatterino.com");
+#ifdef Q_OS_WIN
+    SetCurrentProcessExplicitAppUserModelID(
+        Version::instance().appUserModelID().c_str());
+#endif
 
     std::unique_ptr<Paths> paths;
 
@@ -78,6 +92,9 @@ int main(int argc, char **argv)
     // run in gui mode or browser extension host mode
     if (args.shouldRunBrowserExtensionHost)
     {
+#ifdef Q_OS_MACOS
+        ::chatterinoSetMacOsActivationPolicyProhibited();
+#endif
         runBrowserExtensionHost();
     }
     else if (args.printVersion)
@@ -89,8 +106,7 @@ int main(int argc, char **argv)
             QString("%1 (commit %2%3)")
                 .arg(version.fullVersion())
                 .arg(version.commitHash())
-                .arg(Modes::instance().isNightly ? ", " + version.dateOfBuild()
-                                                 : "");
+                .arg(version.isNightly() ? ", " + version.dateOfBuild() : "");
         std::cout << versionMessage.toLocal8Bit().constData() << '\n';
         std::cout.flush();
     }

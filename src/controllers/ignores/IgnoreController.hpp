@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <QString>
@@ -15,6 +19,7 @@ struct IgnoredMessageParameters {
     QString message;
 
     QString twitchUserID;
+    QString twitchUserLogin;
     bool isMod;
     bool isBroadcaster;
 };

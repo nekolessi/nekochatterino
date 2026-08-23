@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/settingspages/NotificationPage.hpp"
 
 #include "Application.hpp"
@@ -49,6 +53,16 @@ NotificationPage::NotificationPage()
 #if defined(Q_OS_WIN) || defined(CHATTERINO_WITH_LIBNOTIFY)
                 settings.append(this->createCheckBox(
                     "Show notification", getSettings()->notificationToast));
+#endif
+#ifdef Q_OS_WIN
+                settings.append(this->createCheckBox(
+                    "Create start menu shortcut (requires "
+                    "restart)",
+                    getSettings()->createShortcutForToasts,
+                    "When enabled, a shortcut will be created inside your "
+                    "start menu folder if needed by live notifications."
+                    "\n(On portable mode, this is disabled by "
+                    "default)"));
 
                 auto openIn = settings.emplace<QHBoxLayout>().withoutMargin();
                 {

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "widgets/BaseWidget.hpp"
@@ -15,11 +19,11 @@ public:
     {
         if (this->vertical_)
         {
-            this->setScaleIndependantWidth(8);
+            this->setScaleIndependentWidth(8);
         }
         else
         {
-            this->setScaleIndependantHeight(8);
+            this->setScaleIndependentHeight(8);
         }
     }
 

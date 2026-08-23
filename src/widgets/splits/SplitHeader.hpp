@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "widgets/BaseWidget.hpp"
@@ -16,8 +20,9 @@
 
 namespace chatterino {
 
-class Button;
-class EffectLabel;
+class SvgButton;
+class DrawnButton;
+class LabelButton;
 class Label;
 class Split;
 
@@ -54,7 +59,6 @@ protected:
 
 private:
     void initializeLayout();
-    void initializeModeSignals(EffectLabel &label);
     std::unique_ptr<QMenu> createMainMenu();
     std::unique_ptr<QMenu> createChatModeMenu();
 
@@ -76,19 +80,19 @@ private:
     std::chrono::steady_clock::time_point lastReloadedSubEmotes_;
 
     // ui
-    Button *dropdownButton_{};
+    DrawnButton *dropdownButton_{};
     Label *titleLabel_{};
 
-    EffectLabel *modeButton_{};
+    LabelButton *modeButton_{};
     QAction *modeActionSetEmote{};
     QAction *modeActionSetSub{};
     QAction *modeActionSetSlow{};
     QAction *modeActionSetR9k{};
     QAction *modeActionSetFollowers{};
 
-    Button *moderationButton_{};
-    Button *chattersButton_{};
-    Button *addButton_{};
+    SvgButton *moderationButton_{};
+    SvgButton *chattersButton_{};
+    DrawnButton *addButton_{};
 
     // states
     QPoint dragStart_{};

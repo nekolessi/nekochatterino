@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "providers/seventv/SeventvEmotes.hpp"
 
 #include "Application.hpp"
@@ -17,6 +21,8 @@
 #include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QStringView>
 #include <QThread>
 
 #include <array>
@@ -84,34 +90,7 @@ bool isZeroWidthActive(const QJsonObject &activeEmote)
     return flags.has(SeventvActiveEmoteFlag::ZeroWidth);
 }
 
-/**
-  * This is only an indicator if an emote should be added
-  * as zero-width or not. The user can still overwrite this.
-  */
-bool isZeroWidthRecommended(const QJsonObject &emoteData)
-{
-    auto flags =
-        SeventvEmoteFlags(SeventvEmoteFlag(emoteData.value("flags").toInt()));
-    return flags.has(SeventvEmoteFlag::ZeroWidth);
-}
-
-QString kindToString(SeventvEmoteSetKind kind)
-{
-    switch (kind)
-    {
-        case SeventvEmoteSetKind::Global:
-            return QStringLiteral("Global");
-        case SeventvEmoteSetKind::Personal:
-            return QStringLiteral("Personal");
-        case SeventvEmoteSetKind::Channel:
-            return QStringLiteral("Channel");
-        default:
-            return QStringLiteral("");
-    }
-}
-
-Tooltip createTooltip(const QString &name, const QString &author,
-                      SeventvEmoteSetKind kind)
+Tooltip createTooltip(const QString &name, const QString &author, bool isGlobal)
 {
     return Tooltip{QString("%1<br>%2 7TV Emote<br>By: %3")
                        .arg(name.toHtmlEscaped(), kindToString(kind),
@@ -275,11 +254,18 @@ void SeventvEmotes::loadGlobalEmotes()
         return;
     }
 
+    readProviderEmotesCache("global", "seventv", [this](auto jsonDoc) {
+        auto emoteMap = parseEmotes(jsonDoc.object()["emotes"].toArray(), true);
+        this->setGlobalEmotes(std::make_shared<EmoteMap>(std::move(emoteMap)));
+    });
+
     qCDebug(chatterinoSeventv) << "Loading 7TV Global Emotes";
 
     getApp()->getSeventvAPI()->getEmoteSet(
         u"global"_s,
         [this](const auto &json) {
+            writeProviderEmotesCache("global", "seventv",
+                                     QJsonDocument(json).toJson());
             QJsonArray parsedEmotes = json["emotes"].toArray();
 
             auto emoteMap =
@@ -302,7 +288,8 @@ void SeventvEmotes::setGlobalEmotes(std::shared_ptr<const EmoteMap> emotes)
 
 void SeventvEmotes::loadChannelEmotes(
     const std::weak_ptr<Channel> &channel, const QString &channelId,
-    std::function<void(EmoteMap &&, ChannelInfo)> callback, bool manualRefresh)
+    std::function<void(EmoteMap &&, ChannelInfo)> callback, bool manualRefresh,
+    bool cacheHit)
 {
     qCDebug(chatterinoSeventv)
         << "Reloading 7TV Channel Emotes" << channelId << manualRefresh;
@@ -311,6 +298,8 @@ void SeventvEmotes::loadChannelEmotes(
         channelId,
         [callback = std::move(callback), channel, channelId,
          manualRefresh](const auto &json) {
+            writeProviderEmotesCache(channelId, "seventv",
+                                     QJsonDocument(json).toJson());
             const auto emoteSet = json["emote_set"].toObject();
             const auto parsedEmotes = emoteSet["emotes"].toArray();
 
@@ -359,7 +348,7 @@ void SeventvEmotes::loadChannelEmotes(
                 }
             }
         },
-        [channelId, channel, manualRefresh](const auto &result) {
+        [channelId, channel, manualRefresh, cacheHit](const auto &result) {
             auto shared = channel.lock();
             if (!shared)
             {
@@ -386,6 +375,11 @@ void SeventvEmotes::loadChannelEmotes(
                     QStringLiteral("Failed to fetch 7TV channel "
                                    "emotes. (Error: %1)")
                         .arg(errorString));
+                if (cacheHit)
+                {
+                    shared->addSystemMessage(
+                        "Using cached 7TV emotes as fallback.");
+                }
             }
         });
 }
@@ -470,6 +464,8 @@ void SeventvEmotes::getEmoteSet(
     getApp()->getSeventvAPI()->getEmoteSet(
         emoteSetId,
         [callback = std::move(successCallback), emoteSetId](const auto &json) {
+            assert(!isAppAboutToQuit());
+
             auto parsedEmotes = json["emotes"].toArray();
 
             auto kind = SeventvEmoteSetKind::Channel;

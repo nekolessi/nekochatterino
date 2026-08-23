@@ -1,8 +1,12 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/ChatterinoSetting.hpp"
 #include "common/SignalVector.hpp"
-#include "util/QCompareCaseInsensitive.hpp"
+#include "util/QCompareTransparent.hpp"
 
 #include <QTimer>
 

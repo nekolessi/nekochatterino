@@ -3,10 +3,14 @@ project(twitch-eventsub-ws-test)
 set(SOURCES
     src/parse.cpp
     src/string.cpp
+    src/chrono.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-add_sanitizers(${PROJECT_NAME})
+
+if(CHATTERINO_SANITIZER_SUPPORT)
+    add_sanitizers(${PROJECT_NAME})
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE twitch-eventsub-ws GTest::gtest_main)
 

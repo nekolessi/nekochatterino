@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <boost/functional/hash.hpp>
@@ -22,7 +26,7 @@ struct BttvLiveUpdateSubscriptionChannel {
 
 struct BttvLiveUpdateBroadcastMe {
     QString twitchID;
-    QString userName;
+    QString userID;
 
     QJsonObject encode(bool isSubscribe) const;
     bool operator==(const BttvLiveUpdateBroadcastMe &rhs) const;
@@ -72,7 +76,7 @@ struct hash<chatterino::BttvLiveUpdateBroadcastMe> {
     {
         size_t seed = 0;
         boost::hash_combine(seed, qHash(data.twitchID));
-        boost::hash_combine(seed, qHash(data.userName));
+        boost::hash_combine(seed, qHash(data.userID));
         return seed;
     }
 };

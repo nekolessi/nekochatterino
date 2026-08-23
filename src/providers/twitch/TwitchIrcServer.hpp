@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2018 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "common/Atomic.hpp"
@@ -26,6 +30,8 @@ class FfzEmotes;
 class SeventvEmotes;
 class HomiesEmotes;
 class RatelimitBucket;
+class BttvLiveUpdates;
+class SeventvEventAPI;
 
 class ITwitchIrcServer
 {
@@ -69,6 +75,9 @@ public:
     virtual QString getLastUserThatWhisperedMe() const = 0;
     virtual void setLastUserThatWhisperedMe(const QString &user) = 0;
 
+    virtual void initEventAPIs(BttvLiveUpdates *bttvLiveUpdates,
+                               SeventvEventAPI *seventvEventAPI) = 0;
+
     // Update this interface with TwitchIrcServer methods as needed
 };
 
@@ -89,6 +98,8 @@ public:
     TwitchIrcServer &operator=(TwitchIrcServer &&) = delete;
 
     void initialize();
+
+    void aboutToQuit();
 
     void forEachChannelAndSpecialChannels(
         std::function<void(ChannelPtr)> func) override;
@@ -156,6 +167,9 @@ public:
     QString getLastUserThatWhisperedMe() const override;
     void setLastUserThatWhisperedMe(const QString &user) override;
 
+    void initEventAPIs(BttvLiveUpdates *bttvLiveUpdates,
+                       SeventvEventAPI *seventvEventAPI) override;
+
 protected:
     void initializeConnection(IrcConnection *connection, ConnectionType type);
     std::shared_ptr<Channel> createChannel(const QString &channelName);
@@ -195,7 +209,7 @@ private:
 
     std::mutex connectionMutex_;
 
-    pajlada::Signals::SignalHolder connections_;
+    pajlada::Signals::SignalHolder signalHolder;
 
     std::mutex lastMessageMutex_;
     std::queue<std::chrono::steady_clock::time_point> lastMessagePleb_;

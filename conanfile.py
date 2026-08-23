@@ -6,12 +6,14 @@ from os import path
 
 class Chatterino(ConanFile):
     name = "Chatterino"
+    requires = "boost/1.86.0", "hunspell/1.7.2"
     settings = "os", "compiler", "build_type", "arch"
     default_options = {
         "with_benchmark": False,
         "with_openssl3": True,
         "openssl*:shared": True,
         "boost*:header_only": True,
+        "hunspell*:shared": False,
     }
     options = {
         "with_benchmark": [True, False],
@@ -42,6 +44,7 @@ class Chatterino(ConanFile):
         tc.blocks.remove("user_toolchain")
         tc.blocks.remove("output_dirs")
         tc.blocks.remove("apple_system")
+        tc.user_presets_path = False
         tc.generate()
 
         def copy_bin(dep, selector, subdir):

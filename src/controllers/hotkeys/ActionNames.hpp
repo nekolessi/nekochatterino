@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "controllers/hotkeys/HotkeyCategory.hpp"
@@ -37,7 +41,7 @@ struct ActionDefinition {
     uint8_t minCountArguments = 0;
 
     // maxCountArguments is the maximum amount of arguments the action accepts
-    uint8_t maxCountArguments = minCountArguments;
+    uint8_t maxCountArguments = this->minCountArguments;
 
     // possibleArguments is empty or contains all possible argument values,
     // it is an ordered mapping from option name (what the user sees) to
@@ -292,6 +296,7 @@ inline const std::map<HotkeyCategory, ActionDefinitionMap> actionNames{
          {"newSplit", ActionDefinition{"Create a new split"}},
          {"newTab", ActionDefinition{"Create a new tab"}},
          {"openSettings", ActionDefinition{"Open settings"}},
+         {"openAccountSelector", ActionDefinition{"Open account selector"}},
          {"openTab",
           ActionDefinition{
               "Select tab",

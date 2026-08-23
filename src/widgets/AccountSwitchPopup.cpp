@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "widgets/AccountSwitchPopup.hpp"
 
 #include "common/Literals.hpp"
@@ -14,13 +18,16 @@ namespace chatterino {
 using namespace literals;
 
 AccountSwitchPopup::AccountSwitchPopup(QWidget *parent)
-    : BaseWindow({BaseWindow::TopMost, BaseWindow::Frameless,
-                  BaseWindow::DisableLayoutSave},
-                 parent)
+    : BaseWindow(
+          {
+              BaseWindow::TopMost,
+              BaseWindow::Frameless,
+              BaseWindow::DisableLayoutSave,
+              BaseWindow::LinuxPopup,
+          },
+          parent)
 {
-#ifdef Q_OS_LINUX
-    this->setWindowFlag(Qt::Popup);
-#endif
+    this->focusOutAction = FocusOutAction::Hide;
 
     this->setContentsMargins(0, 0, 0, 0);
 
@@ -37,12 +44,13 @@ AccountSwitchPopup::AccountSwitchPopup(QWidget *parent)
     vbox->addLayout(hbox);
 
     connect(manageAccountsButton, &QPushButton::clicked, [this]() {
-        SettingsDialog::showDialog(this, SettingsDialogPreference::Accounts);
+        SettingsDialog::showDialog(this->parentWidget(),
+                                   SettingsDialogPreference::Accounts);
     });
 
     this->getLayoutContainer()->setLayout(vbox);
 
-    this->setScaleIndependantSize(200, 200);
+    this->setScaleIndependentSize(200, 200);
     this->themeChangedEvent();
 }
 
@@ -90,11 +98,6 @@ void AccountSwitchPopup::themeChangedEvent()
 void AccountSwitchPopup::refresh()
 {
     this->ui_.accountSwitchWidget->refresh();
-}
-
-void AccountSwitchPopup::focusOutEvent(QFocusEvent *)
-{
-    this->hide();
 }
 
 void AccountSwitchPopup::paintEvent(QPaintEvent *)

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "twitch-eventsub-ws/payloads/channel-moderate-v2.hpp"
@@ -22,9 +26,16 @@ void handleModerateMessage(
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Clear &action);
 
+/// <MODERATOR> timed out <USER> for <DURATION>[ in <CHANNEL>]: <REASON>
 void handleModerateMessage(
     TwitchChannel *chan, const QDateTime &time,
     const lib::payload::channel_moderate::v2::Event &event,
     const lib::payload::channel_moderate::v2::Timeout &action);
+
+/// <MODERATOR> banned <USER>[ in <CHANNEL>]: <REASON>
+void handleModerateMessage(
+    TwitchChannel *chan, const QDateTime &time,
+    const lib::payload::channel_moderate::v2::Event &event,
+    const lib::payload::channel_moderate::v2::Ban &action);
 
 }  // namespace chatterino::eventsub

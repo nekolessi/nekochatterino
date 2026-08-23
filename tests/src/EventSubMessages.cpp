@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Contributors to Chatterino <https://chatterino.com>
+//
+// SPDX-License-Identifier: MIT
+
 #include "common/Literals.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/highlights/HighlightController.hpp"
@@ -8,7 +12,7 @@
 #include "mocks/TwitchIrcServer.hpp"
 #include "providers/twitch/eventsub/Connection.hpp"
 #include "Test.hpp"
-#include "util/QCompareCaseInsensitive.hpp"
+#include "util/QCompareTransparent.hpp"
 
 #include <QString>
 
@@ -304,6 +308,15 @@ TEST_P(TestEventSubMessagesP, Run)
         input = snapshot->input().toArray();
     }
 
+    auto log = std::make_shared<eventsub::lib::NullLogger>();
+    std::unique_ptr<eventsub::lib::Listener> listener =
+        std::make_unique<eventsub::Connection>();
+    boost::asio::io_context ioc;
+    boost::asio::ssl::context ssl(
+        boost::asio::ssl::context::method::tls_client);
+    auto sess = std::make_shared<eventsub::lib::Session>(
+        ioc, ssl, std::move(listener), log);
+
     for (const auto inputRef : input)
     {
         auto inputObj = inputRef.toObject();
@@ -321,9 +334,7 @@ TEST_P(TestEventSubMessagesP, Run)
 
         auto json = makePayload(eventSubscription->second, inputObj);
 
-        std::unique_ptr<eventsub::lib::Listener> listener =
-            std::make_unique<eventsub::Connection>();
-        auto ec = eventsub::lib::handleMessage(listener, json);
+        auto ec = sess->handleMessage(json);
         ASSERT_FALSE(ec.failed())
             << ec.what() << ec.message() << ec.location().to_string();
     }
