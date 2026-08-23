@@ -149,12 +149,11 @@ void Updates::installUpdates()
 #elif defined Q_OS_WIN
     if (Modes::instance().isPortable)
     {
-        QMessageBox *box =
-            new QMessageBox(QMessageBox::Information,
-                            "Neko's Chatterino Update",
-                            "Neko's Chatterino is downloading the update "
-                            "in the background and will run the "
-                            "updater once it is finished.");
+        QMessageBox *box = new QMessageBox(
+            QMessageBox::Information, "Neko's Chatterino Update",
+            "Neko's Chatterino is downloading the update "
+            "in the background and will run the "
+            "updater once it is finished.");
         box->setAttribute(Qt::WA_DeleteOnClose);
         box->show();
 
@@ -228,12 +227,11 @@ void Updates::installUpdates()
     }
     else
     {
-        QMessageBox *box =
-            new QMessageBox(QMessageBox::Information,
-                            "Neko's Chatterino Update",
-                            "Neko's Chatterino is downloading the update "
-                            "in the background and will run the "
-                            "updater once it is finished.");
+        QMessageBox *box = new QMessageBox(
+            QMessageBox::Information, "Neko's Chatterino Update",
+            "Neko's Chatterino is downloading the update "
+            "in the background and will run the "
+            "updater once it is finished.");
         box->setAttribute(Qt::WA_DeleteOnClose);
         box->show();
 
@@ -254,7 +252,7 @@ void Updates::installUpdates()
                 if (result.status() != 200)
                 {
                     auto *box = new QMessageBox(
-                    QMessageBox::Information, "Neko's Chatterino Update",
+                        QMessageBox::Information, "Neko's Chatterino Update",
                         QStringLiteral("The update couldn't be downloaded "
                                        "(Error: %1).")
                             .arg(result.formatError()));
@@ -276,7 +274,7 @@ void Updates::installUpdates()
                 {
                     this->setStatus_(WriteFileFailed);
                     QMessageBox *box = new QMessageBox(
-                    QMessageBox::Information, "Neko's Chatterino Update",
+                        QMessageBox::Information, "Neko's Chatterino Update",
                         "Failed to save the update file. This could be due to "
                         "window settings or antivirus software.\n\nTry "
                         "manually "
@@ -297,7 +295,7 @@ void Updates::installUpdates()
                 else
                 {
                     QMessageBox *box = new QMessageBox(
-                    QMessageBox::Information, "Neko's Chatterino Update",
+                        QMessageBox::Information, "Neko's Chatterino Update",
                         "Failed to execute update binary. This could be due to "
                         "window "
                         "settings or antivirus software.\n\nTry manually "
@@ -379,8 +377,7 @@ void Updates::checkForUpdates()
             {
                 this->setStatus_(SearchFailed);
                 qCDebug(chatterinoUpdate)
-                    << "error checking version - missing 'download'"
-                    << object;
+                    << "error checking version - missing 'download'" << object;
                 return;
             }
             this->updatePortable_ = portableUrl.toString();

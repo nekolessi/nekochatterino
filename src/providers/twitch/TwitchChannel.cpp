@@ -30,12 +30,12 @@
 #include "providers/ffz/FfzBadges.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
 #include "providers/homies/HomiesBadges.hpp"
+#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/recentmessages/Api.hpp"
 #include "providers/seventv/eventapi/Dispatch.hpp"
 #include "providers/seventv/SeventvAPI.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvEventAPI.hpp"
-#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/ChannelPointReward.hpp"
 #include "providers/twitch/eventsub/Controller.hpp"
@@ -499,7 +499,8 @@ void TwitchChannel::refreshHomiesChannelEmotes(bool manualRefresh)
         weakOf<Channel>(this), this->roomId(),
         [this, weak = weakOf<Channel>(this)](auto &&emoteMap) {
             if (auto shared = weak.lock())
-                this->setHomiesEmotes(std::make_shared<const EmoteMap>(emoteMap));
+                this->setHomiesEmotes(
+                    std::make_shared<const EmoteMap>(emoteMap));
         },
         manualRefresh);
 }

@@ -27,8 +27,7 @@ auto highlightPhraseCheck(const HighlightPhrase &highlight) -> HighlightCheck
     return HighlightCheck{
         [highlight](const auto &args, const auto &twitchBadges,
                     const auto &senderName, const auto &originalMessage,
-                    const auto &flags,
-                    const auto self,
+                    const auto &flags, const auto self,
                     const auto &channel) -> std::optional<HighlightResult> {
             (void)args;          // unused
             (void)twitchBadges;  // unused
@@ -50,15 +49,19 @@ auto highlightPhraseCheck(const HighlightPhrase &highlight) -> HighlightCheck
             auto channels = highlight.getChannels();
             auto excludedChannels = highlight.getExcludedChannels();
 
-            bool inChannel = highlight.isGlobalHighlight() ||
-                             std::any_of(channels.begin(), channels.end(),
-                                         [&channel](const auto &ch) {
-                                             return QString::fromStdString(ch).compare(channel, Qt::CaseInsensitive) == 0;
-                                         });
-            bool excluded = std::any_of(excludedChannels.begin(), excludedChannels.end(),
-                                        [&channel](const auto &ch) {
-                                            return QString::fromStdString(ch).compare(channel, Qt::CaseInsensitive) == 0;
-                                        });
+            bool inChannel =
+                highlight.isGlobalHighlight() ||
+                std::any_of(channels.begin(), channels.end(),
+                            [&channel](const auto &ch) {
+                                return QString::fromStdString(ch).compare(
+                                           channel, Qt::CaseInsensitive) == 0;
+                            });
+            bool excluded =
+                std::any_of(excludedChannels.begin(), excludedChannels.end(),
+                            [&channel](const auto &ch) {
+                                return QString::fromStdString(ch).compare(
+                                           channel, Qt::CaseInsensitive) == 0;
+                            });
 
             if (!inChannel || excluded)
             {
@@ -98,8 +101,7 @@ void rebuildSubscriptionHighlights(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [=](const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
-                const auto &flags,
-                const auto self,
+                const auto &flags, const auto self,
                 const auto &channel) -> std::optional<HighlightResult> {
                 (void)twitchBadges;     // unused
                 (void)senderName;       // unused
@@ -147,8 +149,7 @@ void rebuildWhisperHighlights(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [=](const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
-                const auto &flags,
-                const auto self,
+                const auto &flags, const auto self,
                 const auto &channel) -> std::optional<HighlightResult> {
                 (void)twitchBadges;     // unused
                 (void)senderName;       // unused
@@ -192,9 +193,9 @@ void rebuildReplyThreadHighlight(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [=](const auto & /*args*/, const auto & /*twitchBadges*/,
                 const auto & /*senderName*/, const auto & /*originalMessage*/,
-                const auto &flags,
-                const auto self, const auto &channel) -> std::optional<HighlightResult> {
-                (void)channel; // unused
+                const auto &flags, const auto self,
+                const auto &channel) -> std::optional<HighlightResult> {
+                (void)channel;  // unused
                 if (flags.has(MessageFlag::SubscribedThread) && !self)
                 {
                     return HighlightResult{
@@ -251,9 +252,9 @@ void rebuildMessageHighlights(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [=](const auto & /*args*/, const auto & /*twitchBadges*/,
                 const auto & /*senderName*/, const auto & /*originalMessage*/,
-                const auto &flags,
-                const auto self, const auto &channel) -> std::optional<HighlightResult> {
-                (void)channel; // unused
+                const auto &flags, const auto self,
+                const auto &channel) -> std::optional<HighlightResult> {
+                (void)channel;  // unused
                 if (!flags.has(MessageFlag::AutoModOffendingMessage))
                 {
                     return std::nullopt;
@@ -289,8 +290,7 @@ void rebuildUserHighlights(Settings &settings,
             [showInMentions](
                 const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
-                const auto &flags,
-                const auto self,
+                const auto &flags, const auto self,
                 const auto &channel) -> std::optional<HighlightResult> {
                 (void)args;             //unused
                 (void)twitchBadges;     //unused
@@ -318,8 +318,8 @@ void rebuildUserHighlights(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [highlight](const auto &args, const auto &twitchBadges,
                         const auto &senderName, const auto &originalMessage,
-                        const auto &flags,
-                        const auto self, const auto &channel) -> std::optional<HighlightResult> {
+                        const auto &flags, const auto self,
+                        const auto &channel) -> std::optional<HighlightResult> {
                 (void)args;             // unused
                 (void)twitchBadges;     // unused
                 (void)originalMessage;  // unused
@@ -336,15 +336,20 @@ void rebuildUserHighlights(Settings &settings,
                 auto channels = highlight.getChannels();
                 auto excludedChannels = highlight.getExcludedChannels();
 
-                bool inChannel = highlight.isGlobalHighlight() ||
-                                 std::any_of(channels.begin(), channels.end(),
-                                             [&channel](const auto &ch) {
-                                                 return QString::fromStdString(ch).compare(channel, Qt::CaseInsensitive) == 0;
-                                             });
-                bool excluded = std::any_of(excludedChannels.begin(), excludedChannels.end(),
-                                            [&channel](const auto &ch) {
-                                                return QString::fromStdString(ch).compare(channel, Qt::CaseInsensitive) == 0;
-                                            });
+                bool inChannel =
+                    highlight.isGlobalHighlight() ||
+                    std::any_of(channels.begin(), channels.end(),
+                                [&channel](const auto &ch) {
+                                    return QString::fromStdString(ch).compare(
+                                               channel, Qt::CaseInsensitive) ==
+                                           0;
+                                });
+                bool excluded = std::any_of(
+                    excludedChannels.begin(), excludedChannels.end(),
+                    [&channel](const auto &ch) {
+                        return QString::fromStdString(ch).compare(
+                                   channel, Qt::CaseInsensitive) == 0;
+                    });
 
                 if (!inChannel || excluded)
                 {
@@ -378,8 +383,8 @@ void rebuildBadgeHighlights(Settings &settings,
         checks.emplace_back(HighlightCheck{
             [highlight](const auto &args, const auto &twitchBadges,
                         const auto &senderName, const auto &originalMessage,
-                        const auto &flags,
-                        const auto self, const auto &channel) -> std::optional<HighlightResult> {
+                        const auto &flags, const auto self,
+                        const auto &channel) -> std::optional<HighlightResult> {
                 (void)args;             // unused
                 (void)senderName;       // unused
                 (void)originalMessage;  // unused
@@ -537,9 +542,9 @@ std::pair<bool, HighlightResult> HighlightController::check(
 
     for (const auto &check : *checks)
     {
-        if (auto checkResult = check.cb(args, twitchBadges, senderName,
-                                        originalMessage, messageFlags, self,
-                                        channel);
+        if (auto checkResult =
+                check.cb(args, twitchBadges, senderName, originalMessage,
+                         messageFlags, self, channel);
             checkResult)
         {
             highlighted = true;

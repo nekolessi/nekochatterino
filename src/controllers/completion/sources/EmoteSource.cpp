@@ -5,19 +5,19 @@
 #include "controllers/completion/sources/EmoteSource.hpp"
 
 #include "Application.hpp"
-#include "singletons/Settings.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/completion/sources/Helpers.hpp"
 #include "controllers/emotes/EmoteController.hpp"
 #include "providers/bttv/BttvEmotes.hpp"
 #include "providers/emoji/Emojis.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
+#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
-#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
+#include "singletons/Settings.hpp"
 #include "widgets/splits/InputCompletionItem.hpp"
 
 namespace chatterino::completion {
@@ -159,7 +159,8 @@ void EmoteSource::initializeFromChannel(const Channel *channel)
                 addEmotes(emotes, *seventvG, "Global 7TV");
             }
         }
-        if (getSettings()->enableHomiesCompletion) {
+        if (getSettings()->enableHomiesCompletion)
+        {
             if (auto homiesG = app->getHomiesEmotes()->emotes())
             {
                 addEmotes(emotes, *homiesG, "Global Homies");

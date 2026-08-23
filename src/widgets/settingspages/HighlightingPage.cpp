@@ -18,9 +18,9 @@
 #include "util/LayoutCreator.hpp"
 #include "widgets/dialogs/BadgePickerDialog.hpp"
 #include "widgets/dialogs/ColorPickerDialog.hpp"
+#include "widgets/dialogs/SelectChannelHighlightPopup.hpp"
 #include "widgets/helper/color/ColorItemDelegate.hpp"
 #include "widgets/helper/EditableModelView.hpp"
-#include "widgets/dialogs/SelectChannelHighlightPopup.hpp"
 
 #include <QFileDialog>
 #include <QHeaderView>
@@ -134,10 +134,14 @@ HighlightingPage::HighlightingPage()
                     excludeChannelWidget->raise();
                 });
 
-                QObject::connect(view->getTableView()->selectionModel(), &QItemSelectionModel::currentChanged,
-                                 [this, view](const QModelIndex &current, const QModelIndex &/*previous*/) {
-                                     this->tableCellClicked(current, view, HighlightTab::Messages);
-                                 });
+                QObject::connect(
+                    view->getTableView()->selectionModel(),
+                    &QItemSelectionModel::currentChanged,
+                    [this, view](const QModelIndex &current,
+                                 const QModelIndex & /*previous*/) {
+                        this->tableCellClicked(current, view,
+                                               HighlightTab::Messages);
+                    });
             }
 
             auto pingUsers = tabs.appendTab(new QVBoxLayout, "Users");
@@ -196,7 +200,8 @@ HighlightingPage::HighlightingPage()
                     int selected = view->getTableView()
                                        ->selectionModel()
                                        ->currentIndex()
-                                       .row() - 1;
+                                       .row() -
+                                   1;
 
                     auto selectUsernameWidget =
                         new SelectChannelWidget(selected, "users");
@@ -209,7 +214,8 @@ HighlightingPage::HighlightingPage()
                     int selected = view->getTableView()
                                        ->selectionModel()
                                        ->currentIndex()
-                                       .row() - 1;
+                                       .row() -
+                                   1;
 
                     auto excludeChannelWidget =
                         new ExcludeChannelWidget(selected, "users");
@@ -218,10 +224,14 @@ HighlightingPage::HighlightingPage()
                     excludeChannelWidget->raise();
                 });
 
-                QObject::connect(view->getTableView()->selectionModel(), &QItemSelectionModel::currentChanged,
-                                 [this, view](const QModelIndex &current, const QModelIndex &/*previous*/) {
-                                     this->tableCellClicked(current, view, HighlightTab::Users);
-                                 });
+                QObject::connect(
+                    view->getTableView()->selectionModel(),
+                    &QItemSelectionModel::currentChanged,
+                    [this, view](const QModelIndex &current,
+                                 const QModelIndex & /*previous*/) {
+                        this->tableCellClicked(current, view,
+                                               HighlightTab::Users);
+                    });
             }
 
             auto badgeHighlights = tabs.appendTab(new QVBoxLayout, "Badges");
@@ -275,10 +285,14 @@ HighlightingPage::HighlightingPage()
                     }
                 });
 
-                QObject::connect(view->getTableView()->selectionModel(), &QItemSelectionModel::currentChanged,
-                                 [this, view](const QModelIndex &current, const QModelIndex &/*previous*/) {
-                                     this->tableCellClicked(current, view, HighlightTab::Badges);
-                                 });
+                QObject::connect(
+                    view->getTableView()->selectionModel(),
+                    &QItemSelectionModel::currentChanged,
+                    [this, view](const QModelIndex &current,
+                                 const QModelIndex & /*previous*/) {
+                        this->tableCellClicked(current, view,
+                                               HighlightTab::Badges);
+                    });
             }
 
             auto disabledUsers =
@@ -427,7 +441,8 @@ void HighlightingPage::tableCellClicked(const QModelIndex &clicked,
     {
         case HighlightTab::Messages:
         case HighlightTab::Users: {
-            if (tab == HighlightTab::Messages) {
+            if (tab == HighlightTab::Messages)
+            {
                 if (clicked.row() >= 8)
                 {
                     view->enableSelectChannelButton();
@@ -438,10 +453,14 @@ void HighlightingPage::tableCellClicked(const QModelIndex &clicked,
                     view->disableSelectChannelButton();
                     view->disableExcludeChannelButton();
                 }
-            } else if (clicked.row() >= 1) {
+            }
+            else if (clicked.row() >= 1)
+            {
                 view->enableSelectChannelButton();
                 view->enableExcludeChannelButton();
-            } else {
+            }
+            else
+            {
                 view->disableSelectChannelButton();
                 view->disableExcludeChannelButton();
             }

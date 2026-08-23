@@ -2,8 +2,8 @@
 
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
-#include "messages/Emote.hpp"
 #include "common/Outcome.hpp"
+#include "messages/Emote.hpp"
 
 #include <QJsonArray>
 #include <QJsonObject>

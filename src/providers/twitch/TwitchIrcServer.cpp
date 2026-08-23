@@ -17,11 +17,11 @@
 #include "providers/bttv/BttvLiveUpdates.hpp"
 #include "providers/bttv/liveupdates/BttvLiveUpdateMessages.hpp"  // IWYU pragma: keep
 #include "providers/ffz/FfzEmotes.hpp"
+#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/irc/IrcConnection2.hpp"
 #include "providers/seventv/eventapi/Dispatch.hpp"  // IWYU pragma: keep
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvEventAPI.hpp"
-#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/IrcMessageHandler.hpp"
 #include "providers/twitch/PubSubManager.hpp"

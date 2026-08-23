@@ -271,16 +271,15 @@ void Application::initialize(Settings &settings, const Paths &paths)
         }
 #endif
 
-        auto *box =
-            new QMessageBox(QMessageBox::Information, "Neko's Chatterino",
-                            "Show changelog?",
-                            QMessageBox::Yes | QMessageBox::No);
+        auto *box = new QMessageBox(QMessageBox::Information,
+                                    "Neko's Chatterino", "Show changelog?",
+                                    QMessageBox::Yes | QMessageBox::No);
         box->setAttribute(Qt::WA_DeleteOnClose);
         if (box->exec() == QMessageBox::Yes)
         {
-            QDesktopServices::openUrl(QUrl(
-                "https://github.com/nekolessi/nekochatterino/releases/tag/"
-                "v7.5.5-neko.1"));
+            QDesktopServices::openUrl(
+                QUrl("https://github.com/nekolessi/nekochatterino/releases/tag/"
+                     "v7.5.5-neko.1"));
         }
     }
 

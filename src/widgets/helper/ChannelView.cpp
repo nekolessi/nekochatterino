@@ -2565,9 +2565,9 @@ void ChannelView::handleMouseClick(QMouseEvent *event,
                                 getSettings()->mentionUsersWithAt;
                             const bool isFirstWord =
                                 split->getInput().isEditFirstWord();
-                            auto userMention = formatUserMention(
-                                link.value, isFirstWord, commaMention,
-                                mentionWithAt);
+                            auto userMention =
+                                formatUserMention(link.value, isFirstWord,
+                                                  commaMention, mentionWithAt);
                             insertText(userMention + " ");
                         }
                         break;

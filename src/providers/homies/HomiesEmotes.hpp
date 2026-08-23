@@ -4,8 +4,9 @@
 #include "common/Atomic.hpp"
 
 #include <QJsonObject>
-#include <optional>
+
 #include <memory>
+#include <optional>
 
 namespace chatterino {
 struct Emote;

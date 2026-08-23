@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <QDialog>
 #include <QHBoxLayout>
 #include <QStandardItemModel>

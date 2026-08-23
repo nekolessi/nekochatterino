@@ -20,7 +20,7 @@ public:
                       QSize size, float scale, float dpr) const;
 
     Paint(QString id)
-        : id(std::move(id)){};
+        : id(std::move(id)) {};
     virtual ~Paint() = default;
 
     Paint(const Paint &) = default;

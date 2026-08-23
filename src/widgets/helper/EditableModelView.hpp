@@ -6,8 +6,8 @@
 
 #include <pajlada/signals/signal.hpp>
 #include <QKeySequence>
-#include <QWidget>
 #include <QPushButton>
+#include <QWidget>
 
 #include <span>
 

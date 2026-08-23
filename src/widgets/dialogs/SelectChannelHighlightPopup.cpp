@@ -1,4 +1,5 @@
 #include "SelectChannelHighlightPopup.hpp"
+
 #include "controllers/highlights/HighlightPhrase.hpp"
 
 #ifdef USEWINSDK

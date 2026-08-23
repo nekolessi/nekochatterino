@@ -7,8 +7,8 @@
 #include "Application.hpp"
 #include "common/Channel.hpp"
 #include "common/Literals.hpp"
-#include "common/QLogging.hpp"
 #include "common/network/NetworkResult.hpp"
+#include "common/QLogging.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/commands/CommandController.hpp"
 #include "controllers/highlights/HighlightBlacklistUser.hpp"
@@ -367,7 +367,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                 }
             });
         auto switchAv = avatarBox.emplace<LabelButton>("Show 7TV", this)
-                             .assign(&this->ui_.switchAvatars);
+                            .assign(&this->ui_.switchAvatars);
         switchAv->hide();
         QObject::connect(
             switchAv.getElement(), &LabelButton::leftClicked, [this] {

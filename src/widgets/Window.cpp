@@ -241,15 +241,14 @@ void Window::initializeSystemTray()
     });
 
     this->trayIcon_->setContextMenu(menu);
-    QObject::connect(
-        this->trayIcon_, &QSystemTrayIcon::activated, this,
-        [this](QSystemTrayIcon::ActivationReason reason) {
-            if (reason == QSystemTrayIcon::Trigger ||
-                reason == QSystemTrayIcon::DoubleClick)
-            {
-                this->restoreFromSystemTray();
-            }
-        });
+    QObject::connect(this->trayIcon_, &QSystemTrayIcon::activated, this,
+                     [this](QSystemTrayIcon::ActivationReason reason) {
+                         if (reason == QSystemTrayIcon::Trigger ||
+                             reason == QSystemTrayIcon::DoubleClick)
+                         {
+                             this->restoreFromSystemTray();
+                         }
+                     });
     this->trayIcon_->show();
 }
 

@@ -1,15 +1,14 @@
 #include "HomiesPage.hpp"
 
-#include <QFontDialog>
-#include <QLabel>
-#include <QScrollArea>
-
 #include "singletons/Settings.hpp"
 #include "widgets/settingspages/GeneralPageView.hpp"
 #include "widgets/settingspages/SettingWidget.hpp"
 
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QFontDialog>
+#include <QLabel>
+#include <QScrollArea>
 
 namespace chatterino {
 
@@ -40,8 +39,7 @@ void HomiesPage::initLayout(GeneralPageView &layout)
     auto &s = *getSettings();
 
     layout.addTitle("Apperance");
-    SettingWidget::checkbox("Gray-out historical messages",
-                            s.grayOutRecents)
+    SettingWidget::checkbox("Gray-out historical messages", s.grayOutRecents)
         ->addTo(layout);
 
     layout.addTitle("Behaviour");

@@ -24,12 +24,12 @@
 #include "providers/bttv/BttvBadges.hpp"
 #include "providers/bttv/BttvEmotes.hpp"
 #include "providers/chatterino/ChatterinoBadges.hpp"
-#include "providers/homies/HomiesBadges.hpp"
-#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/colors/ColorProvider.hpp"
 #include "providers/emoji/Emojis.hpp"
 #include "providers/ffz/FfzBadges.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
+#include "providers/homies/HomiesBadges.hpp"
+#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/links/LinkResolver.hpp"
 #include "providers/seventv/SeventvBadges.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
@@ -537,8 +537,7 @@ std::tuple<std::optional<EmotePtr>, MessageElementFlags, bool> parseEmote(
     emote = globalBttvEmotes->emote(name);
     if (emote)
     {
-        return {emote, MessageElementFlag::BttvEmote,
-                emote.value()->zeroWidth};
+        return {emote, MessageElementFlag::BttvEmote, emote.value()->zeroWidth};
     }
 
     emote = globalSeventvEmotes->globalEmote(name);
@@ -1905,8 +1904,6 @@ void MessageBuilder::addTextOrEmote(TextState &state, QString string)
     this->appendOrEmplaceText(string, textColor);
 }
 
-
-
 bool MessageBuilder::isEmpty() const
 {
     return this->message_->elements.empty();
@@ -2351,8 +2348,7 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
                 {*emote, flags},
             };
             this->emplace<LayeredEmoteElement>(
-                std::move(layers),
-                baseEmoteElement->getFlags() | flags,
+                std::move(layers), baseEmoteElement->getFlags() | flags,
                 this->textColor_);
             return Success;
         }

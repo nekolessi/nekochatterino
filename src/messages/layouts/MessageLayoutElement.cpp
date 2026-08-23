@@ -477,10 +477,9 @@ void TextLayoutElement::paint(QPainter &painter,
 
         const auto &paint = seventvPaint.value();
 
-        auto paintPixmap =
-            paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size().toSize(), this->scale_,
-                             this->dpr_);
+        auto paintPixmap = paint->getPixmap(this->getText(), font, this->color_,
+                                            this->getRect().size().toSize(),
+                                            this->scale_, this->dpr_);
 
         painter.drawPixmap(this->getRect().topLeft(), paintPixmap);
     }
@@ -516,10 +515,9 @@ bool TextLayoutElement::paintAnimated(QPainter &painter, qreal yOffset)
     {
         const auto paint = seventvPaint.value();
 
-        const auto paintPixmap =
-            paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size().toSize(), this->scale_,
-                             this->dpr_);
+        const auto paintPixmap = paint->getPixmap(
+            this->getText(), font, this->color_,
+            this->getRect().size().toSize(), this->scale_, this->dpr_);
 
         auto rect = this->getRect();
         rect.moveTop(rect.y() + yOffset);

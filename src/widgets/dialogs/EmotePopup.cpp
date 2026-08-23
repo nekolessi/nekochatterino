@@ -18,9 +18,9 @@
 #include "providers/bttv/BttvEmotes.hpp"
 #include "providers/emoji/Emojis.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
+#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
-#include "providers/homies/HomiesEmotes.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
@@ -52,9 +52,8 @@ auto makeTitleMessage(const QString &title)
     return builder.release();
 }
 
-auto makeEmoteMessage(
-    std::vector<EmotePtr> emotes,
-    MessageElementFlag emoteFlag = MessageElementFlag::Emote)
+auto makeEmoteMessage(std::vector<EmotePtr> emotes,
+                      MessageElementFlag emoteFlag = MessageElementFlag::Emote)
 {
     MessageBuilder builder;
     builder->flags.set(MessageFlag::Centered);
