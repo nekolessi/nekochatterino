@@ -40,13 +40,17 @@
 #    include <rapidjson/document.h>
 #endif
 
+#include <QAction>
 #include <QApplication>
+#include <QCloseEvent>
 #include <QDesktopServices>
 #include <QHeaderView>
+#include <QMenu>
 #include <QMenuBar>
 #include <QObject>
 #include <QPalette>
 #include <QStandardItemModel>
+#include <QSystemTrayIcon>
 #include <QVBoxLayout>
 
 namespace chatterino {
@@ -75,6 +79,10 @@ Window::Window(WindowType type, QWidget *parent)
     if (type == WindowType::Main)
     {
         this->resize(int(600 * this->scale()), int(500 * this->scale()));
+        if (!getApp()->getArgs().isFramelessEmbed)
+        {
+            this->initializeSystemTray();
+        }
     }
     else
     {
@@ -144,10 +152,30 @@ bool Window::event(QEvent *event)
     return BaseWindow::event(event);
 }
 
-void Window::closeEvent(QCloseEvent *)
+void Window::closeEvent(QCloseEvent *event)
 {
     if (this->type_ == WindowType::Main)
     {
+        if (this->trayIcon_ != nullptr && this->trayIcon_->isVisible())
+        {
+            event->ignore();
+            getApp()->getWindows()->save();
+
+            this->trayHiddenWindows_.clear();
+            for (auto *window : QApplication::topLevelWidgets())
+            {
+                if (window->isVisible())
+                {
+                    this->trayHiddenWindows_.emplace_back(window);
+                }
+            }
+            for (auto &window : this->trayHiddenWindows_)
+            {
+                window->hide();
+            }
+            return;
+        }
+
         getApp()->getWindows()->save();
         getApp()->getWindows()->closeAll();
     }
@@ -168,6 +196,60 @@ void Window::closeEvent(QCloseEvent *)
     {
         QApplication::exit();
     }
+}
+
+void Window::initializeSystemTray()
+{
+    if (!QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        return;
+    }
+
+    this->trayIcon_ = new QSystemTrayIcon(QApplication::windowIcon(), this);
+    this->trayIcon_->setToolTip("Chatterino");
+
+    auto *menu = new QMenu(this);
+    auto *showAction = menu->addAction(tr("Show Chatterino"));
+    QObject::connect(showAction, &QAction::triggered, this,
+                     &Window::restoreFromSystemTray);
+
+    menu->addSeparator();
+    auto *exitAction = menu->addAction(tr("Exit"));
+    QObject::connect(exitAction, &QAction::triggered, [] {
+        QApplication::exit();
+    });
+
+    this->trayIcon_->setContextMenu(menu);
+    QObject::connect(
+        this->trayIcon_, &QSystemTrayIcon::activated, this,
+        [this](QSystemTrayIcon::ActivationReason reason) {
+            if (reason == QSystemTrayIcon::Trigger ||
+                reason == QSystemTrayIcon::DoubleClick)
+            {
+                this->restoreFromSystemTray();
+            }
+        });
+    this->trayIcon_->show();
+}
+
+void Window::restoreFromSystemTray()
+{
+    for (auto &window : this->trayHiddenWindows_)
+    {
+        if (window != nullptr)
+        {
+            window->show();
+        }
+    }
+    this->trayHiddenWindows_.clear();
+
+    if (this->isMinimized())
+    {
+        this->setWindowState(this->windowState() & ~Qt::WindowMinimized);
+    }
+    this->show();
+    this->raise();
+    this->activateWindow();
 }
 
 void Window::addLayout()

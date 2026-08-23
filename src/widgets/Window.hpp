@@ -6,6 +6,9 @@
 #include <pajlada/settings/setting.hpp>
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
+#include <QPointer>
+
+class QSystemTrayIcon;
 
 namespace chatterino {
 
@@ -34,6 +37,8 @@ protected:
     void themeChangedEvent() override;
 
 private:
+    void initializeSystemTray();
+    void restoreFromSystemTray();
     void addCustomTitlebarButtons();
     void addDebugStuff(
         std::map<QString, std::function<QString(std::vector<QString>)>>
@@ -44,6 +49,9 @@ private:
     void addMenuBar();
 
     WindowType type_;
+
+    QSystemTrayIcon *trayIcon_ = nullptr;
+    std::vector<QPointer<QWidget>> trayHiddenWindows_;
 
     SplitNotebook *notebook_;
     EffectLabel *userLabel_ = nullptr;
