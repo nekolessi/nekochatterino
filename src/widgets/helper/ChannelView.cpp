@@ -134,10 +134,6 @@ void addEmoteContextMenuItems(QMenu *menu, const Emote &emote, QStringView kind)
                                 QDesktopServices::openUrl(QUrl(url.string));
                             });
     }
-    else if (creatorFlags.has(MessageElementFlag::HomiesEmote))
-    {
-        addPageLink("Homies");
-    }
 }
 
 QString getSearchEngineURL(QString searchEngine)
