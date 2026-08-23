@@ -121,36 +121,13 @@ jobs:
           name: NekoChatterino${{ needs.check-release.outputs.IS_TAGGED != '0' && '.Nightly' || '' }}.Portable.zip
           path: build/
 
-      - name: Download artifact
-        uses: dawidd6/action-download-artifact@v9
+      - name: Download Windows symbols
+        uses: dawidd6/action-download-artifact@v18
         with:
           workflow: build.yml
-          name_is_regexp: true
-          name: '((^NekoChatterino)-[^wW].+$)|(^.+\.7z$)'
+          name: NekoChatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z
+          commit: ${{ github.sha }}
           path: build/
-
-      - name: Fix Directories
-        working-directory: build
-        run: |
-          for file in */ ; do 
-            mv "$file$(find "$file" -type f -printf '%f')" ".tmp.${file%/}";
-            rm -rf "$file";
-            mv ".tmp.${file%/}" "${file%/}";
-          done
-        shell: bash
-
-      - name: Fix paths
-        working-directory: build
-        run: |
-          ls -l
-          mv Chatterino-ubuntu-22.04-Qt-6.7.2.deb Chatterino-Ubuntu-22.04-Qt6.deb
-          mv Chatterino-ubuntu-24.04-Qt-6.7.2.deb Chatterino-Ubuntu-24.04-Qt6.deb
-
-          mv Chatterino-x86_64-Qt-6.7.2.AppImage Chatterino-x86_64-Qt6.AppImage
-
-          mv NekoChatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z NekoChatterino-Windows-debug-symbols.pdb.7z
-
-          mv chatterino-macos-Qt-6.7.1-universal.dmg Chatterino.dmg
 
       - name: Hash files
         working-directory: build

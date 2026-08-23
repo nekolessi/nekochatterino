@@ -32,126 +32,6 @@ env:
   CONAN_VERSION: 2.11.0
 
 jobs:
-  build-ubuntu-docker:
-    # Our Ubuntu builds are built using Docker images that have been pre-published.
-    # This speeds up builds for us since we do some pre-building of packages that takes a long time
-    # However, this means if you need to add a dependency to the build, you'll need to do that
-    # in the https://github.com/Chatterino/docker repository first.
-    name: "Build Ubuntu in Docker"
-    runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            container: ghcr.io/chatterino/chatterino2-build-ubuntu-22.04:latest
-            qt-version: 6.7.2
-            force-lto: false
-            skip-artifact: false
-            skip-crashpad: false
-            build-deb: true
-            plugins: true
-          - os: ubuntu-24.04
-            container: ghcr.io/chatterino/chatterino2-build-ubuntu-24.04:latest
-            qt-version: 6.7.2
-            force-lto: false
-            skip-artifact: false
-            skip-crashpad: false
-            build-deb: true
-            plugins: true
-          - os: ubuntu-24.04
-            container: ghcr.io/chatterino/chatterino2-build-ubuntu-24.04:latest
-            qt-version: 6.7.2
-            force-lto: false
-            skip-artifact: false
-            skip-crashpad: false
-            build-deb: false
-            plugins: false
-    env:
-      C2_ENABLE_LTO: ${{ matrix.force-lto }}
-      C2_ENABLE_CRASHPAD: ${{ matrix.skip-crashpad == false }}
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-          fetch-depth: 0 # allows for tags access
-
-      - name: Fix git permission error
-        run: |
-          git config --global --add safe.directory '*'
-
-      - name: Determine build type
-        id: build-type
-        shell: bash
-        run: |
-          if [ "${CHATTERINO_BUILD_TYPE}" = "auto" ]; then
-            if git describe --exact-match --match 'v*'; then
-              echo "Auto - found release tag format"
-              echo "NIGHTLY_BUILD=Off" >> "$GITHUB_OUTPUT"
-            else
-              echo "Auto - did not find release tag format"
-              echo "NIGHTLY_BUILD=On" >> "$GITHUB_OUTPUT"
-            fi
-          elif [ "${CHATTERINO_BUILD_TYPE}" = "nightly" ]; then
-            echo "Override to nightly"
-            echo "NIGHTLY_BUILD=On" >> "$GITHUB_OUTPUT"
-          elif [ "${CHATTERINO_BUILD_TYPE}" = "stable" ]; then
-            echo "Override to stable"
-            echo "NIGHTLY_BUILD=Off" >> "$GITHUB_OUTPUT"
-          else
-            echo "Error: no build type variable set"
-            exit 1
-          fi
-
-      - name: Install Python and libclang (24.04)
-        if: matrix.os == 'ubuntu-24.04'
-        run: |
-          sudo apt update
-          sudo DEBIAN_FRONTEND=noninteractive apt -y --no-install-recommends install \
-            python3 python3-venv clang-18 clang-format-18 libclang-18-dev
-          echo "LIBCLANG_LIBRARY_FILE=/usr/lib/x86_64-linux-gnu/libclang-18.so" >> "$GITHUB_ENV"
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 42
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 42
-
-      - name: Build
-        run: |
-          mkdir build
-          cd build
-          CXXFLAGS=-fno-sized-deallocation cmake \
-            -DCMAKE_INSTALL_PREFIX=appdir/usr/ \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DPAJLADA_SETTINGS_USE_BOOST_FILESYSTEM=On \
-            -DUSE_PRECOMPILED_HEADERS=OFF \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
-            -DCHATTERINO_LTO="$C2_ENABLE_LTO" \
-            -DCMAKE_PREFIX_PATH="$Qt6_DIR/lib/cmake" \
-            -DCHATTERINO_STATIC_QT_BUILD=On \
-            -DCHATTERINO_NIGHTLY_BUILD=${{ steps.build-type.outputs.NIGHTLY_BUILD }} \
-            -DFORCE_JSON_GENERATION=${{matrix.os == 'ubuntu-24.04' && 'On' || 'Off'}} \
-            -DCHATTERINO_PLUGINS=${{ matrix.plugins && 'On' || 'Off' }} \
-            ..
-          make -j"$(nproc)"
-
-      - name: Check generated sources
-        if: matrix.os == 'ubuntu-24.04'
-        run: |
-          git add -N lib/twitch-eventsub-ws/include lib/twitch-eventsub-ws/src
-          git --no-pager diff --exit-code lib/twitch-eventsub-ws/include lib/twitch-eventsub-ws/src
-
-      - name: Package - .deb (Ubuntu)
-        if: matrix.build-deb
-        run: |
-          cd build
-          sh ./../.CI/CreateUbuntuDeb.sh
-
-      - name: Upload artifact - .deb (Ubuntu)
-        if: matrix.build-deb
-        uses: actions/upload-artifact@v7
-        with:
-          name: NekoChatterino-${{ matrix.os }}-Qt-${{ matrix.qt-version }}.deb
-          path: build/Chatterino-${{ matrix.os }}-x86_64.deb
-
   build:
     name: "Build ${{ matrix.os }}, Qt ${{ matrix.qt-version }} (LTO:${{ matrix.force-lto }}, crashpad:${{ matrix.skip-crashpad && 'off' || 'on' }})"
     runs-on: ${{ matrix.os }}
@@ -164,13 +44,6 @@ jobs:
             force-lto: false
             skip-artifact: false
             skip-crashpad: false
-          # macOS (ARM)
-          - os: macos-latest
-            qt-version: 6.7.1
-            force-lto: false
-            skip-artifact: false
-            skip-crashpad: false
-
       fail-fast: false
     env:
       C2_ENABLE_LTO: ${{ matrix.force-lto }}
@@ -414,7 +287,7 @@ jobs:
           path: build/chatterino-macos-Qt-${{ matrix.qt-version }}-universal.dmg
 
   create-release:
-    needs: [build-ubuntu-docker, build]
+    needs: [build]
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/upgrade/chatterino-2.5.5')
 
@@ -435,34 +308,6 @@ jobs:
         with:
           name: NekoChatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z
           path: release-artifacts/
-
-      # Linux
-      - uses: actions/download-artifact@v8
-        name: Ubuntu 22.04 deb
-        with:
-          name: NekoChatterino-ubuntu-22.04-Qt-6.7.2.deb
-          path: release-artifacts/
-
-      - uses: actions/download-artifact@v8
-        name: Ubuntu 24.04 deb
-        with:
-          name: NekoChatterino-ubuntu-24.04-Qt-6.7.2.deb
-          path: release-artifacts/
-
-      # macOS
-      - uses: actions/download-artifact@v4
-        name: macOS Qt6.7.1 dmg
-        with:
-          name: chatterino-macos-Qt-6.7.1-universal.dmg
-          path: release-artifacts/
-
-      - name: Rename artifacts
-        run: |
-          ls -l
-          # Rename the macos build to indicate that it's for macOS 13.0 users
-          mv chatterino-macos-Qt-6.7.1-universal.dmg Chatterino-macOS-13.0-universal.dmg
-        working-directory: release-artifacts
-        shell: bash
 
       - name: Setup Python
         uses: actions/setup-python@v6
