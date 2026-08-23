@@ -90,7 +90,22 @@ bool isZeroWidthActive(const QJsonObject &activeEmote)
     return flags.has(SeventvActiveEmoteFlag::ZeroWidth);
 }
 
-Tooltip createTooltip(const QString &name, const QString &author, bool isGlobal)
+QString kindToString(SeventvEmoteSetKind kind)
+{
+    switch (kind)
+    {
+        case SeventvEmoteSetKind::Global:
+            return QStringLiteral("Global");
+        case SeventvEmoteSetKind::Personal:
+            return QStringLiteral("Personal");
+        case SeventvEmoteSetKind::Channel:
+            return QStringLiteral("Channel");
+    }
+    return {};
+}
+
+Tooltip createTooltip(const QString &name, const QString &author,
+                      SeventvEmoteSetKind kind)
 {
     return Tooltip{QString("%1<br>%2 7TV Emote<br>By: %3")
                        .arg(name.toHtmlEscaped(), kindToString(kind),

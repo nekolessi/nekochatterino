@@ -90,7 +90,8 @@ using SeventvEmoteSetFlags = FlagsEnum<SeventvEmoteSetFlag>;
 
 namespace seventv::detail {
 
-EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes, bool isGlobal);
+EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes,
+                     SeventvEmoteSetKind kind);
 
 }  // namespace seventv::detail
 
