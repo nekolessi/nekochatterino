@@ -13,9 +13,9 @@ desktop-friendly system tray behavior.
 
 Download the latest Windows portable build:
 
-**[NekoChatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/chatterino7/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+**[NekoChatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
 
-[View release notes and file checksum](https://github.com/nekolessi/chatterino7/releases/tag/v7.5.5-neko.1)
+[View release notes and file checksum](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.1)
 
 1. Download and extract the ZIP file.
 2. Open the extracted `Chatterino2` folder.
@@ -54,7 +54,7 @@ completely, right-click the tray icon and choose **Exit**.
 ## Issues and feedback
 
 Report Neko's Chatterino problems in this repository's
-[issue tracker](https://github.com/nekolessi/chatterino7/issues).
+[issue tracker](https://github.com/nekolessi/NekoChatterino/issues).
 
 For an issue that also occurs in official Chatterino, use the
 [upstream issue tracker](https://github.com/Chatterino/chatterino2/issues).
@@ -62,10 +62,10 @@ For an issue that also occurs in official Chatterino, use the
 ## Source and building
 
 The current Neko's Chatterino work is on the
-[`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/chatterino7/tree/upgrade/chatterino-2.5.5).
+[`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/NekoChatterino/tree/upgrade/chatterino-2.5.5).
 
 ```shell
-git clone --recurse-submodules --branch upgrade/chatterino-2.5.5 https://github.com/nekolessi/chatterino7.git
+git clone --recurse-submodules --branch upgrade/chatterino-2.5.5 https://github.com/nekolessi/NekoChatterino.git
 ```
 
 See [Building on Windows](./BUILDING_ON_WINDOWS.md) for the upstream build
