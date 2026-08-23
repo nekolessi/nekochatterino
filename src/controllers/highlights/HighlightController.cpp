@@ -28,7 +28,8 @@ auto highlightPhraseCheck(const HighlightPhrase &highlight) -> HighlightCheck
         [highlight](const auto &args, const auto &twitchBadges,
                     const auto &senderName, const auto &originalMessage,
                     const auto &flags,
-                    const auto self) -> std::optional<HighlightResult> {
+                    const auto self,
+                    const auto &channel) -> std::optional<HighlightResult> {
             (void)args;          // unused
             (void)twitchBadges;  // unused
             (void)senderName;    // unused
@@ -98,7 +99,8 @@ void rebuildSubscriptionHighlights(Settings &settings,
             [=](const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
                 const auto &flags,
-                const auto self) -> std::optional<HighlightResult> {
+                const auto self,
+                const auto &channel) -> std::optional<HighlightResult> {
                 (void)twitchBadges;     // unused
                 (void)senderName;       // unused
                 (void)originalMessage;  // unused
@@ -146,7 +148,8 @@ void rebuildWhisperHighlights(Settings &settings,
             [=](const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
                 const auto &flags,
-                const auto self) -> std::optional<HighlightResult> {
+                const auto self,
+                const auto &channel) -> std::optional<HighlightResult> {
                 (void)twitchBadges;     // unused
                 (void)senderName;       // unused
                 (void)originalMessage;  // unused
@@ -287,7 +290,8 @@ void rebuildUserHighlights(Settings &settings,
                 const auto &args, const auto &twitchBadges,
                 const auto &senderName, const auto &originalMessage,
                 const auto &flags,
-                const auto self) -> std::optional<HighlightResult> {
+                const auto self,
+                const auto &channel) -> std::optional<HighlightResult> {
                 (void)args;             //unused
                 (void)twitchBadges;     //unused
                 (void)senderName;       //unused
@@ -534,7 +538,8 @@ std::pair<bool, HighlightResult> HighlightController::check(
     for (const auto &check : *checks)
     {
         if (auto checkResult = check.cb(args, twitchBadges, senderName,
-                                        originalMessage, messageFlags, self);
+                                        originalMessage, messageFlags, self,
+                                        channel);
             checkResult)
         {
             highlighted = true;
