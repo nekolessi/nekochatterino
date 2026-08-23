@@ -241,7 +241,7 @@ void Application::initialize(Settings &settings, const Paths &paths)
         if (Version::instance().isRunningInRosetta())
         {
             auto *armBox =
-                new QMessageBox(QMessageBox::Information, "Chatterino Homies",
+            new QMessageBox(QMessageBox::Information, "NekoChatterino",
                                 "It looks like you're running the x86-64 "
                                 "version of Chatterio on "
                                 "Apple Silicon (ARM) using Rosetta2 emulation. "
@@ -272,7 +272,7 @@ void Application::initialize(Settings &settings, const Paths &paths)
         }
 #endif
 
-        auto *box = new QMessageBox(QMessageBox::Information, "Chatterino Homies",
+        auto *box = new QMessageBox(QMessageBox::Information, "NekoChatterino",
                                     "Show changelog?",
                                     QMessageBox::Yes | QMessageBox::No);
         box->setAttribute(Qt::WA_DeleteOnClose);

@@ -72,15 +72,16 @@ AboutPage::AboutPage()
             label->setTextInteractionFlags(Qt::TextBrowserInteraction);
         }
 
-        // About Chatterino
-        auto aboutChatterino = layout.emplace<QGroupBox>("About Chatterino...");
+        // About NekoChatterino
+        auto aboutChatterino =
+            layout.emplace<QGroupBox>("About NekoChatterino...");
         {
             auto l = aboutChatterino.emplace<QVBoxLayout>();
 
             // clang-format off
             l.emplace<QLabel>("Chatterino Wiki can be found <a href=\"" % LINK_CHATTERINO_WIKI % "\">here</a>")->setOpenExternalLinks(true);
             l.emplace<QLabel>("All about original Chatterino's <a href=\"" % LINK_CHATTERINO_FEATURES % "\">features</a>")->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Join the official Chatterino Homies <a href=\"" % LINK_CHATTERINO_DISCORD % "\">Discord</a>")->setOpenExternalLinks(true);
+            l.emplace<QLabel>("Join the Homies <a href=\"" % LINK_CHATTERINO_DISCORD % "\">Discord</a>")->setOpenExternalLinks(true);
             // clang-format on
         }
 
