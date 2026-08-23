@@ -18,7 +18,7 @@ concurrency:
 env:
   C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/chatterino7' || startsWith(github.ref, 'refs/heads/bugfix-release') || startsWith(github.ref, 'refs/heads/release/')}}
   CHATTERINO_REQUIRE_CLEAN_GIT: On
-  CONAN_VERSION: 2.11.0
+  CONAN_VERSION: 2.31.2
 
 jobs:
   build-ubuntu-docker:
