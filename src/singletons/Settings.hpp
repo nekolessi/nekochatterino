@@ -434,6 +434,11 @@ public:
     };
     BoolSetting showUnlistedSevenTVEmotes = {
         "/emotes/showUnlistedSevenTVEmotes", false};
+    /**
+     * Kept temporarily to migrate the pre-2.5.5 setting.
+     */
+    BoolSetting showUnlistedEmotesDontUse = {"/emotes/showUnlistedEmotes",
+                                             false};
     EnumStringSetting<EmojiStyle> emojiSet = {
         "/emotes/emojiSet",
         EmojiStyle::Twitter,
