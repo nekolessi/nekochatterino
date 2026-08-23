@@ -165,7 +165,7 @@ void SeventvPaints::addPaint(const QJsonObject &paintJson)
         return;
     }
 
-    DebugCount::increase(u"7TV Paints"_s);
+    DebugCount::increase(DebugObject::SeventvPaint);
     this->knownPaints_[paintID] = *paint;
 }
 
@@ -182,7 +182,7 @@ void SeventvPaints::assignPaintToUser(const QString &paintID,
         if (it == this->paintMap_.end())
         {
             this->paintMap_.emplace(userName.string, paintIt->second);
-            DebugCount::increase(u"7TV Paint Assignments"_s);
+            DebugCount::increase(DebugObject::SeventvPaintAssignment);
             changed = true;
         }
         else if (it->second != paintIt->second)
@@ -209,7 +209,7 @@ void SeventvPaints::clearPaintFromUser(const QString &paintID,
     if (it != this->paintMap_.end() && it->second->id == paintID)
     {
         this->paintMap_.erase(userName.string);
-        DebugCount::decrease(u"7TV Paint Assignments"_s);
+        DebugCount::decrease(DebugObject::SeventvPaintAssignment);
     }
 }
 

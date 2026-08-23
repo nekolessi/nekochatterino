@@ -55,6 +55,8 @@ enum class DebugObject : size_t {
     // 7TV personal emotes
     SeventvPersonalEmoteSet,
     SeventvPersonalEmoteAssignment,
+    SeventvPaint,
+    SeventvPaintAssignment,
 
     Count,
 };
@@ -139,5 +141,9 @@ constexpr magic_enum::customize::customize_t
             return "7TV personal emote sets";
         case chatterino::DebugObject::SeventvPersonalEmoteAssignment:
             return "7TV personal emote assignments";
+        case chatterino::DebugObject::SeventvPaint:
+            return "7TV paints";
+        case chatterino::DebugObject::SeventvPaintAssignment:
+            return "7TV paint assignments";
     }
 }
