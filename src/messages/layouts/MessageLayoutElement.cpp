@@ -422,7 +422,8 @@ void ImageWithCircleBackgroundLayoutElement::paint(
 
 TextLayoutElement::TextLayoutElement(MessageElement &_creator, QString &_text,
                                      QSizeF size, QColor _color,
-                                     FontStyle _style, float _scale)
+                                     FontStyle _style, float _scale,
+                                     MessageColor::Type messageColor, float dpr)
     : MessageLayoutElement(_creator, size)
     , color_(_color)
     , style_(_style)
@@ -478,7 +479,8 @@ void TextLayoutElement::paint(QPainter &painter,
 
         auto paintPixmap =
             paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size(), this->scale_, this->dpr_);
+                             this->getRect().size().toSize(), this->scale_,
+                             this->dpr_);
 
         painter.drawPixmap(this->getRect().topLeft(), paintPixmap);
     }
@@ -493,7 +495,7 @@ void TextLayoutElement::paint(QPainter &painter,
     }
 }
 
-bool TextLayoutElement::paintAnimated(QPainter & /*painter*/, qreal /*yOffset*/)
+bool TextLayoutElement::paintAnimated(QPainter &painter, qreal yOffset)
 {
     if (this->getRect().isEmpty())
     {
@@ -516,7 +518,8 @@ bool TextLayoutElement::paintAnimated(QPainter & /*painter*/, qreal /*yOffset*/)
 
         const auto paintPixmap =
             paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size(), this->scale_, this->dpr_);
+                             this->getRect().size().toSize(), this->scale_,
+                             this->dpr_);
 
         auto rect = this->getRect();
         rect.moveTop(rect.y() + yOffset);

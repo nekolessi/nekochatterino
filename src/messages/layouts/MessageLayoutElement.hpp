@@ -173,7 +173,9 @@ class TextLayoutElement : public MessageLayoutElement
 {
 public:
     TextLayoutElement(MessageElement &creator_, QString &text, QSizeF size,
-                      QColor color_, FontStyle style_, float scale_);
+                      QColor color_, FontStyle style_, float scale_,
+                      MessageColor::Type messageColor = MessageColor::Text,
+                      float dpr = 1.0F);
 
 protected:
     void addCopyTextToString(QString &str, uint32_t from = 0,

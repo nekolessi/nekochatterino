@@ -739,7 +739,8 @@ void TextElement::addToContainer(MessageLayoutContainer &container,
 
                 auto *e = new TextLayoutElement(
                     *this, text, QSizeF(width, metrics.height()), color,
-                    this->style_, container.getScale());
+                    this->style_, container.getScale(), this->color_.type(),
+                    container.getImageScale() / container.getScale());
                 e->setTrailingSpace(hasTrailingSpace);
                 e->setText(text);
                 e->setWordId(wordId);
@@ -993,7 +994,8 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
 
             auto *e = new TextLayoutElement(
                 *this, text, QSizeF(width, metrics.height()), color,
-                this->style_, container.getScale());
+                this->style_, container.getScale(), this->color_.type(),
+                container.getImageScale() / container.getScale());
             e->setTrailingSpace(hasTrailingSpace);
             e->setText(text);
 
