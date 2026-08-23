@@ -8,6 +8,7 @@
 #include "common/Channel.hpp"
 #include "common/Literals.hpp"
 #include "common/QLogging.hpp"
+#include "common/network/NetworkResult.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/commands/CommandController.hpp"
 #include "controllers/highlights/HighlightBlacklistUser.hpp"
@@ -365,11 +366,11 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                     default:;
                 }
             });
-        auto switchAv = avatarBox.emplace<EffectLabel2>(nullptr, 2)
-                            .assign(&this->ui_.switchAvatars);
+        auto switchAv = avatarBox.emplace<LabelButton>("Show 7TV", this)
+                             .assign(&this->ui_.switchAvatars);
         switchAv->hide();
         QObject::connect(
-            switchAv.getElement(), &EffectLabel2::leftClicked, [this] {
+            switchAv.getElement(), &LabelButton::leftClicked, [this] {
                 if (!this->seventvAvatar_)
                 {
                     this->ui_.switchAvatars->hide();
@@ -380,14 +381,14 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                 {
                     this->seventvAvatar_->stop();
                     this->ui_.avatarButton->setPixmap(this->avatarPixmap_);
-                    this->ui_.switchAvatars->getLabel().setText("Show 7TV");
+                    this->ui_.switchAvatars->setText("Show 7TV");
                 }
                 else
                 {
                     this->ui_.avatarButton->setPixmap(
                         this->seventvAvatar_->currentPixmap());
                     this->seventvAvatar_->start();
-                    this->ui_.switchAvatars->getLabel().setText("Show Twitch");
+                    this->ui_.switchAvatars->setText("Show Twitch");
                 }
                 this->updateAvatarUrl();
             });
@@ -1360,7 +1361,7 @@ void UserInfoPopup::setSevenTVAvatar(const QString &filename,
     movie->start();
     this->seventvAvatar_ = movie;
     this->ui_.switchAvatars->show();
-    this->ui_.switchAvatars->getLabel().setText("Show Twitch");
+    this->ui_.switchAvatars->setText("Show Twitch");
     this->isTwitchAvatarShown_ = false;
     this->updateAvatarUrl();
 }

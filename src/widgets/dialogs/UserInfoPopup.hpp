@@ -10,6 +10,7 @@
 
 #include <pajlada/signals/scoped-connection.hpp>
 #include <pajlada/signals/signal.hpp>
+#include <QPixmap>
 #include <QPointer>
 
 class QCheckBox;
@@ -120,9 +121,14 @@ private:
         ChannelView *latestMessages = nullptr;
 
         LabelButton *usercardLabel = nullptr;
+        LabelButton *switchAvatars = nullptr;
     } ui_;
 
     QPointer<EditUserNotesDialog> editUserNotesDialog_;
+
+    QMovie *seventvAvatar_ = nullptr;
+    bool isTwitchAvatarShown_ = true;
+    QPixmap avatarPixmap_;
 
     class TimeoutWidget : public BaseWidget
     {
