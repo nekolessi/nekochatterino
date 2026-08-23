@@ -476,6 +476,19 @@ const MessageColor &LayeredEmoteElement::textElementColor() const
     return this->textElementColor_;
 }
 
+std::unique_ptr<MessageElement> EmoteElement::clone() const
+{
+    auto element = std::make_unique<EmoteElement>(
+        this->emote_, this->getFlags(), this->textColor_);
+    if (this->textElement_)
+    {
+        element->textElement_ = std::unique_ptr<TextElement>(
+            dynamic_cast<TextElement *>(this->textElement_->clone().release()));
+    }
+    element->cloneFrom(*this);
+    return element;
+}
+
 std::unique_ptr<MessageElement> LayeredEmoteElement::clone() const
 {
     auto emotes = this->getEmotes();

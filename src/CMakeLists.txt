@@ -439,8 +439,21 @@ set(SOURCE_FILES
         providers/seventv/SeventvEmotes.hpp
         providers/seventv/SeventvEventAPI.cpp
         providers/seventv/SeventvEventAPI.hpp
+        providers/seventv/SeventvPaints.cpp
+        providers/seventv/SeventvPaints.hpp
         providers/seventv/SeventvPersonalEmotes.cpp
         providers/seventv/SeventvPersonalEmotes.hpp
+
+        providers/seventv/paints/LinearGradientPaint.cpp
+        providers/seventv/paints/LinearGradientPaint.hpp
+        providers/seventv/paints/Paint.cpp
+        providers/seventv/paints/Paint.hpp
+        providers/seventv/paints/PaintDropShadow.cpp
+        providers/seventv/paints/PaintDropShadow.hpp
+        providers/seventv/paints/RadialGradientPaint.cpp
+        providers/seventv/paints/RadialGradientPaint.hpp
+        providers/seventv/paints/UrlPaint.cpp
+        providers/seventv/paints/UrlPaint.hpp
 
         providers/seventv/eventapi/Client.cpp
         providers/seventv/eventapi/Client.hpp
