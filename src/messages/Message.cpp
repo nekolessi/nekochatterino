@@ -114,15 +114,20 @@ std::shared_ptr<const Message> Message::cloneWith(
     cloned->loginName = this->loginName;
     cloned->displayName = this->displayName;
     cloned->localizedName = this->localizedName;
+    cloned->userID = this->userID;
     cloned->timeoutUser = this->timeoutUser;
     cloned->channelName = this->channelName;
     cloned->usernameColor = this->usernameColor;
+    cloned->isMod = this->isMod;
     cloned->serverReceivedTime = this->serverReceivedTime;
-    cloned->badges = this->badges;
-    cloned->badgeInfos = this->badgeInfos;
+    cloned->twitchBadges = this->twitchBadges;
+    cloned->twitchBadgeInfos = this->twitchBadgeInfos;
+    cloned->externalBadges = this->externalBadges;
     cloned->highlightColor = this->highlightColor;
     cloned->replyThread = this->replyThread;
+    cloned->replyParent = this->replyParent;
     cloned->count = this->count;
+    cloned->frozen = this->frozen;
     cloned->reward = this->reward;
     std::transform(this->elements.cbegin(), this->elements.cend(),
                    std::back_inserter(cloned->elements),
