@@ -52,7 +52,9 @@ auto makeTitleMessage(const QString &title)
     return builder.release();
 }
 
-auto makeEmoteMessage(std::vector<EmotePtr> emotes)
+auto makeEmoteMessage(
+    std::vector<EmotePtr> emotes,
+    MessageElementFlag emoteFlag = MessageElementFlag::Emote)
 {
     MessageBuilder builder;
     builder->flags.set(MessageFlag::Centered);
@@ -73,15 +75,16 @@ auto makeEmoteMessage(std::vector<EmotePtr> emotes)
     {
         builder
             .emplace<EmoteElement>(
-                emote, MessageElementFlags{MessageElementFlag::AlwaysShow,
-                                           MessageElementFlag::Emote})
+                emote,
+                MessageElementFlags{MessageElementFlag::AlwaysShow, emoteFlag})
             ->setLink(Link(Link::InsertText, emote->name.string));
     }
 
     return builder.release();
 }
 
-auto makeEmoteMessage(const EmoteMap &map)
+auto makeEmoteMessage(const EmoteMap &map,
+                      MessageElementFlag emoteFlag = MessageElementFlag::Emote)
 {
     if (map.empty())
     {
@@ -100,7 +103,7 @@ auto makeEmoteMessage(const EmoteMap &map)
     {
         vec.emplace_back(ptr);
     }
-    return makeEmoteMessage(std::move(vec));
+    return makeEmoteMessage(std::move(vec), emoteFlag);
 }
 
 auto makeEmojiMessage(const std::vector<EmojiPtr> &emojiMap)
@@ -123,11 +126,13 @@ auto makeEmojiMessage(const std::vector<EmojiPtr> &emojiMap)
     return builder.release();
 }
 
-void addEmotes(Channel &channel, auto &&emotes, const QString &title)
+void addEmotes(Channel &channel, auto &&emotes, const QString &title,
+               MessageElementFlag emoteFlag = MessageElementFlag::Emote)
 {
     channel.addMessage(makeTitleMessage(title), MessageContext::Original);
-    channel.addMessage(makeEmoteMessage(std::forward<decltype(emotes)>(emotes)),
-                       MessageContext::Original);
+    channel.addMessage(
+        makeEmoteMessage(std::forward<decltype(emotes)>(emotes), emoteFlag),
+        MessageContext::Original);
 }
 
 void addTwitchEmoteSets(const std::shared_ptr<const EmoteMap> &local,
