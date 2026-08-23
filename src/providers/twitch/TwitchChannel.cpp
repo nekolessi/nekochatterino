@@ -459,7 +459,8 @@ void TwitchChannel::refreshSevenTVChannelEmotes(bool manualRefresh)
             const auto json = jsonDoc.object();
             const auto emoteSet = json["emote_set"].toObject();
             const auto parsedEmotes = emoteSet["emotes"].toArray();
-            auto emoteMap = seventv::detail::parseEmotes(parsedEmotes, false);
+            auto emoteMap = seventv::detail::parseEmotes(
+                parsedEmotes, SeventvEmoteSetKind::Channel);
             this->setSeventvEmotes(std::make_shared<const EmoteMap>(emoteMap));
         });
 
