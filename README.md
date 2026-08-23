@@ -1,8 +1,8 @@
-# NekoChatterino
+# Neko's Chatterino
 
 ![NekoChatterino icon](./resources/icon.ico)
 
-NekoChatterino is a personal, Windows-focused fork of
+Neko's Chatterino is a personal, Windows-focused fork of
 [Chatterino Homies](https://github.com/itzAlex/chatterino7), updated with the
 changes from [Chatterino 2.5.5](https://github.com/Chatterino/chatterino2/releases/tag/2.5.5).
 
@@ -22,7 +22,7 @@ Download the latest Windows portable build:
 3. Run `chatterino.exe`.
 
 > [!NOTE]
-> NekoChatterino is currently unsigned. Windows Smart App Control or an
+> Neko's Chatterino is currently unsigned. Windows Smart App Control or an
 > organization policy may block unsigned applications. Only download builds
 > from this repository.
 
@@ -53,7 +53,7 @@ completely, right-click the tray icon and choose **Exit**.
 
 ## Issues and feedback
 
-Report NekoChatterino problems in this repository's
+Report Neko's Chatterino problems in this repository's
 [issue tracker](https://github.com/nekolessi/chatterino7/issues).
 
 For an issue that also occurs in official Chatterino, use the
@@ -61,7 +61,7 @@ For an issue that also occurs in official Chatterino, use the
 
 ## Source and building
 
-The current NekoChatterino work is on the
+The current Neko's Chatterino work is on the
 [`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/chatterino7/tree/upgrade/chatterino-2.5.5).
 
 ```shell
@@ -73,7 +73,7 @@ instructions.
 
 ## Credits and license
 
-NekoChatterino is built on the work of:
+Neko's Chatterino is built on the work of:
 
 - [Chatterino](https://github.com/Chatterino/chatterino2), a Twitch chat client.
 - [Chatterino Homies](https://github.com/itzAlex/chatterino7), which provides the
