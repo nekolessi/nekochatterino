@@ -130,7 +130,7 @@ void SeventvEventAPI::subscribeTwitchChannel(const QString &id)
             ChannelCondition{id},
             SubscriptionType::DeleteEntitlement,
         });
-        this->subscribe({
+        this->private_->subscribe({
             ChannelCondition{id},
             SubscriptionType::AnyEmoteSet,
         });
@@ -171,7 +171,7 @@ void SeventvEventAPI::unsubscribeTwitchChannel(const QString &id)
             ChannelCondition{id},
             SubscriptionType::DeleteEntitlement,
         });
-        this->unsubscribe({
+        this->private_->unsubscribe({
             ChannelCondition{id},
             SubscriptionType::AnyEmoteSet,
         });
