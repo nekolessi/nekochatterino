@@ -491,6 +491,12 @@ BttvBadges *Application::getBttvBadges()
     return this->bttvBadges.get();
 }
 
+HomiesBadges *Application::getHomiesBadges()
+{
+    assert(this->homiesBadges);
+    return this->homiesBadges.get();
+}
+
 SeventvBadges *Application::getSeventvBadges()
 {
     // SeventvBadges handles its own locks, so we don't need to assert that this is called in the GUI thread

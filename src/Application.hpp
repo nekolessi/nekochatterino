@@ -101,6 +101,7 @@ public:
     virtual IChatterinoBadges *getChatterinoBadges() = 0;
     virtual FfzBadges *getFfzBadges() = 0;
     virtual BttvBadges *getBttvBadges() = 0;
+    virtual HomiesBadges *getHomiesBadges() = 0;
     virtual SeventvBadges *getSeventvBadges() = 0;
     virtual IUserDataController *getUserData() = 0;
     virtual ISoundController *getSound() = 0;
@@ -229,6 +230,7 @@ public:
     ILogging *getChatLogger() override;
     FfzBadges *getFfzBadges() override;
     BttvBadges *getBttvBadges() override;
+    HomiesBadges *getHomiesBadges() override;
     SeventvBadges *getSeventvBadges() override;
     IUserDataController *getUserData() override;
     ISoundController *getSound() override;

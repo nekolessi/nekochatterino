@@ -67,6 +67,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <tuple>
 #include <unordered_set>
 
 using namespace chatterino::literals;
@@ -459,7 +460,8 @@ EmotePtr makeSharedChatBadge(const QString &sourceName,
     });
 }
 
-EmotePtr parseEmote(TwitchChannel *twitchChannel, const EmoteName &name)
+std::tuple<std::optional<EmotePtr>, MessageElementFlags, bool> parseEmote(
+    TwitchChannel *twitchChannel, const QString &userID, const EmoteName &name)
 {
     // Emote order:
     //  - 7TV Personal Emotes
@@ -496,19 +498,21 @@ EmotePtr parseEmote(TwitchChannel *twitchChannel, const EmoteName &name)
         emote = twitchChannel->ffzEmote(name);
         if (emote)
         {
-            return *emote;
+            return {emote, MessageElementFlag::FfzEmote, false};
         }
 
         emote = twitchChannel->bttvEmote(name);
         if (emote)
         {
-            return *emote;
+            return {emote, MessageElementFlag::BttvEmote,
+                    emote.value()->zeroWidth};
         }
 
         emote = twitchChannel->seventvEmote(name);
         if (emote)
         {
-            return *emote;
+            return {emote, MessageElementFlag::SevenTVEmote,
+                    emote.value()->zeroWidth};
         }
 
         emote = twitchChannel->homiesEmote(name);
@@ -527,22 +531,24 @@ EmotePtr parseEmote(TwitchChannel *twitchChannel, const EmoteName &name)
     emote = globalFfzEmotes->emote(name);
     if (emote)
     {
-        return *emote;
+        return {emote, MessageElementFlag::FfzEmote, false};
     }
 
     emote = globalBttvEmotes->emote(name);
     if (emote)
     {
-        return *emote;
+        return {emote, MessageElementFlag::BttvEmote,
+                emote.value()->zeroWidth};
     }
 
     emote = globalSeventvEmotes->globalEmote(name);
     if (emote)
     {
-        return *emote;
+        return {emote, MessageElementFlag::SevenTVEmote,
+                emote.value()->zeroWidth};
     }
 
-    return {};
+    return {{}, {}, false};
 }
 
 }  // namespace
@@ -2322,15 +2328,14 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
                                        const QString &userID,
                                        const EmoteName &name)
 {
-    auto emote = parseEmote(twitchChannel, name);
+    auto [emote, flags, zeroWidth] = parseEmote(twitchChannel, userID, name);
 
     if (!emote)
     {
         return Failure;
     }
 
-    if (emote->zeroWidth && getSettings()->enableZeroWidthEmotes &&
-        !this->isEmpty())
+    if (zeroWidth && getSettings()->enableZeroWidthEmotes && !this->isEmpty())
     {
         // Attempt to merge current zero-width emote into any previous emotes
         auto *asEmote = dynamic_cast<EmoteElement *>(&this->back());
@@ -2343,11 +2348,11 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
 
             std::vector<LayeredEmoteElement::Emote> layers = {
                 {baseEmote, baseEmoteElement->getFlags()},
-                {emote, MessageElementFlag::Emote},
+                {*emote, flags},
             };
             this->emplace<LayeredEmoteElement>(
                 std::move(layers),
-                baseEmoteElement->getFlags() | MessageElementFlag::Emote,
+                baseEmoteElement->getFlags() | flags,
                 this->textColor_);
             return Success;
         }
@@ -2355,16 +2360,15 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
         auto *asLayered = dynamic_cast<LayeredEmoteElement *>(&this->back());
         if (asLayered)
         {
-            asLayered->addEmoteLayer({emote, MessageElementFlag::Emote});
-            asLayered->addFlags(MessageElementFlag::Emote);
+            asLayered->addEmoteLayer({*emote, flags});
+            asLayered->addFlags(flags);
             return Success;
         }
 
         // No emote to merge with, just show as regular emote
     }
 
-    this->emplace<EmoteElement>(emote, MessageElementFlag::Emote,
-                                this->textColor_);
+    this->emplace<EmoteElement>(*emote, flags, this->textColor_);
     return Success;
 }
 
