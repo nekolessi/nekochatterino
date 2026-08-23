@@ -133,14 +133,14 @@ void Updates::installUpdates()
 
 #ifdef Q_OS_MACOS
     QMessageBox *box = new QMessageBox(
-        QMessageBox::Information, "NekoChatterino Update",
+        QMessageBox::Information, "Neko's Chatterino Update",
         "A link will open in your browser. Download and install to update.");
     box->setAttribute(Qt::WA_DeleteOnClose);
     box->open();
     QDesktopServices::openUrl(this->updateExe_);
 #elif defined Q_OS_LINUX
     QMessageBox *box =
-        new QMessageBox(QMessageBox::Information, "NekoChatterino Update",
+        new QMessageBox(QMessageBox::Information, "Neko's Chatterino Update",
                         "Automatic updates are currently not available on "
                         "Linux. Please redownload the app to update.");
     box->setAttribute(Qt::WA_DeleteOnClose);
@@ -150,8 +150,9 @@ void Updates::installUpdates()
     if (Modes::instance().isPortable)
     {
         QMessageBox *box =
-        new QMessageBox(QMessageBox::Information, "NekoChatterino Update",
-                            "Chatterino is downloading the update "
+            new QMessageBox(QMessageBox::Information,
+                            "Neko's Chatterino Update",
+                            "Neko's Chatterino is downloading the update "
                             "in the background and will run the "
                             "updater once it is finished.");
         box->setAttribute(Qt::WA_DeleteOnClose);
@@ -165,7 +166,7 @@ void Updates::installUpdates()
 
                 postToThread([] {
                     QMessageBox *box = new QMessageBox(
-            QMessageBox::Information, "NekoChatterino Update",
+                        QMessageBox::Information, "Neko's Chatterino Update",
                         "Failed while trying to download the update.");
                     box->setAttribute(Qt::WA_DeleteOnClose);
                     box->show();
@@ -176,7 +177,7 @@ void Updates::installUpdates()
                 if (result.status() != 200)
                 {
                     auto *box = new QMessageBox(
-            QMessageBox::Information, "NekoChatterino Update",
+                        QMessageBox::Information, "Neko's Chatterino Update",
                         QStringLiteral("The update couldn't be downloaded "
                                        "(Error: %1).")
                             .arg(result.formatError()));
@@ -228,8 +229,9 @@ void Updates::installUpdates()
     else
     {
         QMessageBox *box =
-            new QMessageBox(QMessageBox::Information, "NekoChatterino Update",
-                            "Chatterino is downloading the update "
+            new QMessageBox(QMessageBox::Information,
+                            "Neko's Chatterino Update",
+                            "Neko's Chatterino is downloading the update "
                             "in the background and will run the "
                             "updater once it is finished.");
         box->setAttribute(Qt::WA_DeleteOnClose);
@@ -242,7 +244,7 @@ void Updates::installUpdates()
                 this->setStatus_(DownloadFailed);
 
                 QMessageBox *box = new QMessageBox(
-                    QMessageBox::Information, "NekoChatterino Update",
+                    QMessageBox::Information, "Neko's Chatterino Update",
                     "Failed to download the update. \n\nTry manually "
                     "downloading the update.");
                 box->setAttribute(Qt::WA_DeleteOnClose);
@@ -252,7 +254,7 @@ void Updates::installUpdates()
                 if (result.status() != 200)
                 {
                     auto *box = new QMessageBox(
-                    QMessageBox::Information, "NekoChatterino Update",
+                    QMessageBox::Information, "Neko's Chatterino Update",
                         QStringLiteral("The update couldn't be downloaded "
                                        "(Error: %1).")
                             .arg(result.formatError()));
@@ -274,7 +276,7 @@ void Updates::installUpdates()
                 {
                     this->setStatus_(WriteFileFailed);
                     QMessageBox *box = new QMessageBox(
-                    QMessageBox::Information, "NekoChatterino Update",
+                    QMessageBox::Information, "Neko's Chatterino Update",
                         "Failed to save the update file. This could be due to "
                         "window settings or antivirus software.\n\nTry "
                         "manually "
@@ -295,7 +297,7 @@ void Updates::installUpdates()
                 else
                 {
                     QMessageBox *box = new QMessageBox(
-                    QMessageBox::Information, "NekoChatterino Update",
+                    QMessageBox::Information, "Neko's Chatterino Update",
                         "Failed to execute update binary. This could be due to "
                         "window "
                         "settings or antivirus software.\n\nTry manually "

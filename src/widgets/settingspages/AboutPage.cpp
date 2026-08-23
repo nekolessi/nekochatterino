@@ -72,9 +72,9 @@ AboutPage::AboutPage()
             label->setTextInteractionFlags(Qt::TextBrowserInteraction);
         }
 
-        // About NekoChatterino
+        // About Neko's Chatterino
         auto aboutChatterino =
-            layout.emplace<QGroupBox>("About NekoChatterino...");
+            layout.emplace<QGroupBox>("About Neko's Chatterino...");
         {
             auto l = aboutChatterino.emplace<QVBoxLayout>();
 

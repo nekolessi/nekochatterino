@@ -18,7 +18,7 @@ Version::Version()
     , dateOfBuild_(QStringLiteral(CHATTERINO_CMAKE_GEN_DATE))
     , isNightly_(CHATTERINO_NIGHTLY_BUILD == 1)
 {
-    this->fullVersion_ = "NekoChatterino ";
+    this->fullVersion_ = "Neko's Chatterino ";
     if (this->isNightly())
     {
         this->fullVersion_ += "Nightly ";
@@ -134,13 +134,13 @@ bool Version::isNightly() const
 
 void Version::generateBuildString()
 {
-    // e.g. NekoChatterino 2.3.5 or NekoChatterino Nightly 2.3.5
+    // e.g. Neko's Chatterino 2.3.5 or Neko's Chatterino Nightly 2.3.5
     auto s = this->fullVersion();
 
     // Add commit information
     s +=
         QString(
-            R"( (commit <a href="https://github.com/itzAlex/chatterino7/commit/%1">%1</a>)")
+            R"( (commit <a href="https://github.com/nekolessi/nekochatterino/commit/%1">%1</a>)")
             .arg(this->commitHash());
     if (this->isModified())
     {

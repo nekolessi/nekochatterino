@@ -4,7 +4,7 @@ name: Build
 on:
   push:
     branches:
-      - chatterino7
+      - "upgrade/chatterino-2.5.5"
       - "bugfix-release/**"
       - "release/*"
   pull_request:
@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/chatterino7' || startsWith(github.ref, 'refs/heads/bugfix-release') || startsWith(github.ref, 'refs/heads/release/')}}
+  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/upgrade/chatterino-2.5.5' || startsWith(github.ref, 'refs/heads/bugfix-release') || startsWith(github.ref, 'refs/heads/release/')}}
   CHATTERINO_REQUIRE_CLEAN_GIT: On
   CHATTERINO_BUILD_TYPE: ${{ case(inputs.buildType != '', inputs.buildType, 'auto') }}
   CONAN_VERSION: 2.11.0
@@ -149,7 +149,7 @@ jobs:
         if: matrix.build-deb
         uses: actions/upload-artifact@v7
         with:
-          name: Chatterino-${{ matrix.os }}-Qt-${{ matrix.qt-version }}.deb
+          name: NekoChatterino-${{ matrix.os }}-Qt-${{ matrix.qt-version }}.deb
           path: build/Chatterino-${{ matrix.os }}-x86_64.deb
 
   build:
@@ -293,7 +293,7 @@ jobs:
           nmake /S /NOLOGO chatterino-crash-handler
           mkdir Chatterino2/crashpad
           cp bin/crashpad/crashpad-handler.exe Chatterino2/crashpad/crashpad-handler.exe
-          7z a bin/chatterino-Qt-${{ matrix.qt-version }}.pdb.7z bin/chatterino.pdb
+          7z a bin/NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}-symbols.pdb.7z bin/chatterino.pdb
 
       - name: Prepare build dir (windows)
         if: startsWith(matrix.os, 'windows')
@@ -307,21 +307,21 @@ jobs:
         if: startsWith(matrix.os, 'windows')
         working-directory: build
         run: |
-          7z a chatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip Chatterino2/
+          7z a NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip Chatterino2/
 
       - name: Upload artifact (Windows - binary)
         if: startsWith(matrix.os, 'windows') && !matrix.skip-artifact
         uses: actions/upload-artifact@v7
         with:
-          name: chatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip
-          path: build/chatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip
+          name: NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip
+          path: build/NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip
 
       - name: Upload artifact (Windows - symbols)
         if: startsWith(matrix.os, 'windows') && !matrix.skip-artifact
         uses: actions/upload-artifact@v7
         with:
-          name: chatterino-windows-x86-64-Qt-${{ matrix.qt-version }}-symbols.pdb.7z
-          path: build/bin/chatterino-Qt-${{ matrix.qt-version }}.pdb.7z
+          name: NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}-symbols.pdb.7z
+          path: build/bin/NekoChatterino-windows-x86-64-Qt-${{ matrix.qt-version }}-symbols.pdb.7z
 
       - name: Clean Conan cache
         if: startsWith(matrix.os, 'windows')
@@ -416,7 +416,7 @@ jobs:
   create-release:
     needs: [build-ubuntu-docker, build]
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/chatterino7')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/upgrade/chatterino-2.5.5')
 
     steps:
       - uses: actions/checkout@v6
@@ -427,26 +427,26 @@ jobs:
       - uses: actions/download-artifact@v8
         name: Windows Qt6.7.1
         with:
-          name: chatterino-windows-x86-64-Qt-6.7.3.zip
+          name: NekoChatterino-windows-x86-64-Qt-6.7.3.zip
           path: release-artifacts/
 
       - uses: actions/download-artifact@v8
         name: Windows Qt6.7.1 symbols
         with:
-          name: chatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z
+          name: NekoChatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z
           path: release-artifacts/
 
       # Linux
       - uses: actions/download-artifact@v8
         name: Ubuntu 22.04 deb
         with:
-          name: Chatterino-ubuntu-22.04-Qt-6.7.2.deb
+          name: NekoChatterino-ubuntu-22.04-Qt-6.7.2.deb
           path: release-artifacts/
 
       - uses: actions/download-artifact@v8
         name: Ubuntu 24.04 deb
         with:
-          name: Chatterino-ubuntu-24.04-Qt-6.7.2.deb
+          name: NekoChatterino-ubuntu-24.04-Qt-6.7.2.deb
           path: release-artifacts/
 
       # macOS
@@ -489,7 +489,7 @@ jobs:
           artifacts: "release-artifacts/*"
           body: ${{ steps.format-changes.outputs.changelog }}
           prerelease: true
-          name: Nightly Release
+          name: Neko's Chatterino Nightly
           tag: nightly-build
 
       - name: Update nightly-build tag

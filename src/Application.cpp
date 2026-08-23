@@ -241,14 +241,14 @@ void Application::initialize(Settings &settings, const Paths &paths)
         if (Version::instance().isRunningInRosetta())
         {
             auto *armBox =
-            new QMessageBox(QMessageBox::Information, "NekoChatterino",
+                new QMessageBox(QMessageBox::Information, "Neko's Chatterino",
                                 "It looks like you're running the x86-64 "
-                                "version of Chatterio on "
+                                "version of Neko's Chatterino on "
                                 "Apple Silicon (ARM) using Rosetta2 emulation. "
                                 "Our fork does not support this environment."
                                 "<br>Do you want to "
                                 "switch to the native "
-                                "version of the 7TV Chatterino?",
+                                "version of Neko's Chatterino?",
                                 QMessageBox::Yes | QMessageBox::No);
             armBox->setAttribute(Qt::WA_DeleteOnClose);
             if (armBox->exec() == QMessageBox::Yes)
@@ -257,14 +257,13 @@ void Application::initialize(Settings &settings, const Paths &paths)
                     if (Modes::instance().isNightly)
                     {
                         return QStringLiteral(
-                            "https://github.com/SevenTV/chatterino7/"
-                            "releases/tag/nightly-build");
+                            "https://github.com/nekolessi/nekochatterino/"
+                            "releases/tag/v7.5.5-neko.1");
                     }
 
                     return QStringLiteral(
-                               "https://github.com/SevenTV/chatterino7/"
-                               "releases/tag/v") +
-                           Version::instance().version();
+                        "https://github.com/nekolessi/nekochatterino/"
+                        "releases/latest");
                 }();
                 QDesktopServices::openUrl(url);
                 _Exit(0);
@@ -272,14 +271,16 @@ void Application::initialize(Settings &settings, const Paths &paths)
         }
 #endif
 
-        auto *box = new QMessageBox(QMessageBox::Information, "NekoChatterino",
-                                    "Show changelog?",
-                                    QMessageBox::Yes | QMessageBox::No);
+        auto *box =
+            new QMessageBox(QMessageBox::Information, "Neko's Chatterino",
+                            "Show changelog?",
+                            QMessageBox::Yes | QMessageBox::No);
         box->setAttribute(Qt::WA_DeleteOnClose);
         if (box->exec() == QMessageBox::Yes)
         {
-            QDesktopServices::openUrl(
-                QUrl("https://chatterinohomies.com"));
+            QDesktopServices::openUrl(QUrl(
+                "https://github.com/nekolessi/nekochatterino/releases/tag/"
+                "v7.5.5-neko.1"));
         }
     }
 

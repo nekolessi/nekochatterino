@@ -1,6 +1,6 @@
 # Neko's Chatterino
 
-![NekoChatterino icon](./resources/icon.ico)
+![Neko's Chatterino icon](./resources/icon.ico)
 
 Neko's Chatterino is a personal, Windows-focused fork of
 [Chatterino Homies](https://github.com/itzAlex/chatterino7), updated with the
@@ -13,7 +13,7 @@ desktop-friendly system tray behavior.
 
 Download the latest Windows portable build:
 
-**[NekoChatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+**[Neko's Chatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
 
 [View release notes and file checksum](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.1)
 
@@ -30,7 +30,7 @@ Download the latest Windows portable build:
 
 - Updated from Chatterino 2.5.2 to Chatterino 2.5.5.
 - Includes the Chatterino Homies 7.5.2H1 feature set.
-- Custom NekoChatterino branding and version information.
+- Custom Neko's Chatterino branding and version information.
 - Closing the main window minimizes it to the system tray.
 - Click the tray icon to restore the window, or right-click it to exit.
 - Correctly restores a maximized window.
@@ -47,8 +47,8 @@ Download the latest Windows portable build:
 
 ## Using the system tray
 
-The **X** button hides NekoChatterino in the notification area instead of
-ending it. Click the NekoChatterino tray icon to bring the app back. To close it
+The **X** button hides Neko's Chatterino in the notification area instead of
+ending it. Click the Neko's Chatterino tray icon to bring the app back. To close it
 completely, right-click the tray icon and choose **Exit**.
 
 ## Issues and feedback
