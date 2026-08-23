@@ -132,7 +132,7 @@ jobs:
       matrix:
         include:
           # Windows
-          - os: windows-latest
+          - os: windows-2022
             qt-version: 6.7.3
             force-lto: false
             plugins: true
