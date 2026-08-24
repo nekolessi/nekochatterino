@@ -13,10 +13,10 @@ desktop-friendly system tray behavior.
 
 Choose the latest Windows build:
 
-- **[Portable ZIP for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
-- **[Windows installer (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-installer-windows-x64.exe)**
+- **[Portable ZIP for Windows (64-bit)](https://github.com/nekolessi/nekochatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+- **[Windows installer (64-bit)](https://github.com/nekolessi/nekochatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-installer-windows-x64.exe)**
 
-[View release notes and SHA-256 checksums](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.1)
+[View release notes and SHA-256 checksums](https://github.com/nekolessi/nekochatterino/releases/tag/v7.5.5-neko.1)
 
 For the portable edition, extract the ZIP, open its `Chatterino2` folder, and
 run `chatterino.exe`. Alternatively, download and run the installer.
@@ -48,13 +48,13 @@ run `chatterino.exe`. Alternatively, download and run the installer.
 ## Using the system tray
 
 The **X** button hides Neko's Chatterino in the notification area instead of
-ending it. Click the Neko's Chatterino tray icon to bring the app back. To close it
-completely, right-click the tray icon and choose **Exit**.
+ending it. Click the Neko's Chatterino tray icon to bring the app back. To close
+it completely, right-click the tray icon and choose **Exit**.
 
 ## Issues and feedback
 
 Report Neko's Chatterino problems in this repository's
-[issue tracker](https://github.com/nekolessi/NekoChatterino/issues).
+[issue tracker](https://github.com/nekolessi/nekochatterino/issues).
 
 For an issue that also occurs in official Chatterino, use the
 [upstream issue tracker](https://github.com/Chatterino/chatterino2/issues).
@@ -62,10 +62,10 @@ For an issue that also occurs in official Chatterino, use the
 ## Source and building
 
 The current Neko's Chatterino work is on the
-[`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/NekoChatterino/tree/upgrade/chatterino-2.5.5).
+[`upgrade/chatterino-2.5.5` branch](https://github.com/nekolessi/nekochatterino/tree/upgrade/chatterino-2.5.5).
 
 ```shell
-git clone --recurse-submodules --branch upgrade/chatterino-2.5.5 https://github.com/nekolessi/NekoChatterino.git
+git clone --recurse-submodules --branch upgrade/chatterino-2.5.5 https://github.com/nekolessi/nekochatterino.git
 ```
 
 See [Building on Windows](./BUILDING_ON_WINDOWS.md) for the upstream build

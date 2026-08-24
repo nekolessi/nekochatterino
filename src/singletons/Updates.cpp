@@ -53,7 +53,9 @@ namespace chatterino {
 Updates::Updates(const Paths &paths_, Settings &settings)
     : paths(paths_)
     , currentVersion_(CHATTERINO_VERSION)
-    , updateGuideLink_("https://chatterinohomies.com")
+    , updateGuideLink_(
+          "https://github.com/nekolessi/nekochatterino/releases/tag/"
+          "v7.5.5-neko.1")
 {
     qCDebug(chatterinoUpdate) << "init UpdateManager";
 
@@ -384,7 +386,9 @@ void Updates::checkForUpdates()
 #        endif
 
 #    elif defined Q_OS_LINUX
-            this->updateGuideLink_ = "https://chatterinohomies.com"
+            this->updateGuideLink_ =
+                "https://github.com/nekolessi/nekochatterino/releases/tag/"
+                "v7.5.5-neko.1";
 #    else
             return;
 #    endif
