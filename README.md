@@ -13,10 +13,10 @@ desktop-friendly system tray behavior.
 
 Choose the latest Windows build:
 
-- **[Portable ZIP for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.2/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
-- **[Windows installer (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.2/NekoChatterino-7.5.5-nightly-installer-windows-x64.exe)**
+- **[Portable ZIP for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+- **[Windows installer (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-installer-windows-x64.exe)**
 
-[View release notes and SHA-256 checksums](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.2)
+[View release notes and SHA-256 checksums](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.1)
 
 For the portable edition, extract the ZIP, open its `Chatterino2` folder, and
 run `chatterino.exe`. Alternatively, download and run the installer.
