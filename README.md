@@ -11,15 +11,15 @@ desktop-friendly system tray behavior.
 
 ## Download
 
-Download the latest Windows portable build:
+Choose the latest Windows build:
 
-**[Neko's Chatterino 7.5.5 portable for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.1/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+- **[Portable ZIP for Windows (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.2/NekoChatterino-7.5.5-nightly-portable-windows-x64.zip)**
+- **[Windows installer (64-bit)](https://github.com/nekolessi/NekoChatterino/releases/download/v7.5.5-neko.2/NekoChatterino-7.5.5-nightly-installer-windows-x64.exe)**
 
-[View release notes and file checksum](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.1)
+[View release notes and SHA-256 checksums](https://github.com/nekolessi/NekoChatterino/releases/tag/v7.5.5-neko.2)
 
-1. Download and extract the ZIP file.
-2. Open the extracted `Chatterino2` folder.
-3. Run `chatterino.exe`.
+For the portable edition, extract the ZIP, open its `Chatterino2` folder, and
+run `chatterino.exe`. Alternatively, download and run the installer.
 
 > [!NOTE]
 > Neko's Chatterino is currently unsigned. Windows Smart App Control or an
