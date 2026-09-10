@@ -2,9 +2,9 @@
 
 ![Neko's Chatterino icon](./resources/icon.ico)
 
-Neko's Chatterino is a personal, Windows-focused fork of
+Neko's Chatterino is a personal fork of
 [Chatterino Homies](https://github.com/itzAlex/chatterino7), updated with the
-changes from [Chatterino 2.5.5](https://github.com/Chatterino/chatterino2/releases/tag/2.5.5).
+changes from [Chatterino 2.5.5](https://github.com/Chatterino/chatterino2/releases/tag/v2.5.5).
 
 It keeps the extra Homies features while adding a polished portable build and
 desktop-friendly system tray behavior.
