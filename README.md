@@ -81,4 +81,4 @@ neko's chatterino stands on the shoulders of:
 
 this is an independent community fork—not an official Chatterino or Chatterino Homies release. everything remains available under the licenses included in this repository.
 
-## ok bye
+ok bye
