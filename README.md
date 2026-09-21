@@ -82,5 +82,3 @@ neko's chatterino stands on the shoulders of:
 this is an independent community fork—not an official Chatterino or Chatterino Homies release. everything remains available under the licenses included in this repository.
 
 ## ok bye
-
-made with C++, twitch emotes, portable ZIP files, and the kind of confidence usually seen moments before a linker error ♡
