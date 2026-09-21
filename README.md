@@ -24,7 +24,7 @@ for the portable version, extract the ZIP, open the `Chatterino2` folder, and ru
 
 ## what did i do to it
 
-- dragged it from Chatterino 2.5.2 to 2.5.5 without anyone falling out of the car
+- dragged it from Chatterino 2.5.2 to 2.5.5 without anyone dying
 - kept the Chatterino Homies 7.5.2H1 feature set
 - gave it custom neko's chatterino branding + version info
 - made the **X** button minimize the app to the system tray
