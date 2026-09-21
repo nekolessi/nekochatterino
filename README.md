@@ -6,7 +6,7 @@
 
 neko's chatterino is my personal fork of [Chatterino Homies](https://github.com/itzAlex/chatterino7), updated with the changes from [Chatterino 2.5.5](https://github.com/Chatterino/chatterino2/releases/tag/v2.5.5).
 
-it keeps the extra homies features, adds a portable windows build, and behaves nicely in the system tray because closing an app and *actually closing it* are apparently two completely different emotional commitments.
+it keeps the extra homies features, adds a portable windows build, and behaves nicely in the system tray because closing an app and _actually closing it_ are apparently two completely different emotional commitments.
 
 ## download her
 
